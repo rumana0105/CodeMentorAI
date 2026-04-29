@@ -5,6 +5,6 @@ coverage/
 .DS_Store
 *.log
 .env*
-!.env.example
+
 gen-lang-client-*.json
 firebase-admin-key*.json
