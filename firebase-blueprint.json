@@ -1,0 +1,161 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and progress tracking",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "solvedProblems": { "type": "array", "items": { "type": "string" } },
+        "attempts": { "type": "object" },
+        "xp": { "type": "number" },
+        "level": { "type": "number" },
+        "rank": { "type": "number" },
+        "contestHistory": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Problem": {
+      "title": "Problem",
+      "description": "Coding problem definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "category": { "type": "string" },
+        "inputFormat": { "type": "string" },
+        "outputFormat": { "type": "string" },
+        "constraints": { "type": "string" },
+        "starterCode": { "type": "object" },
+        "testCases": { "type": "array" },
+        "hiddenTestCases": { "type": "array" },
+        "languages": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "title", "description", "difficulty"]
+    },
+    "Contest": {
+      "title": "Contest",
+      "description": "Competitive coding contest",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "problems": { "type": "array", "items": { "type": "string" } },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["upcoming", "active", "ended"] }
+      },
+      "required": ["id", "title", "startTime", "endTime"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Code submission record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "problemId": { "type": "string" },
+        "contestId": { "type": "string" },
+        "language": { "type": "string" },
+        "code": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "wrong_answer", "error"] },
+        "runtime": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "problemId", "language", "code", "status"]
+    },
+    "BattleMatch": {
+      "title": "BattleMatch",
+      "description": "Real-time coding duel match",
+      "type": "object",
+      "properties": {
+        "problemId": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "creatorName": { "type": "string" },
+        "creatorPhoto": { "type": "string" },
+        "opponentId": { "type": "string" },
+        "opponentName": { "type": "string" },
+        "opponentPhoto": { "type": "string" },
+        "status": { "type": "string", "enum": ["waiting", "active", "completed"] },
+        "creatorProgress": { "type": "number" },
+        "opponentProgress": { "type": "number" },
+        "winnerId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "durationMs": { "type": "number" },
+        "isPrivate": { "type": "boolean" },
+        "matchCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["problemId", "creatorId", "status", "creatorProgress", "opponentProgress", "durationMs", "isPrivate", "createdAt"]
+    },
+    "ForumPost": {
+      "title": "ForumPost",
+      "description": "Community forum discussion post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "upvotes": { "type": "number" },
+        "downvotes": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "title", "content", "createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "System administrator record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User documents"
+    },
+    "/problems/{problemId}": {
+      "schema": "Problem",
+      "description": "Problem definitions"
+    },
+    "/contests/{contestId}": {
+      "schema": "Contest",
+      "description": "Contest definitions"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Submission records"
+    },
+    "/matches/{matchId}": {
+      "schema": "BattleMatch",
+      "description": "Battleground matches"
+    },
+    "/forum_posts/{postId}": {
+      "schema": "ForumPost",
+      "description": "Forum discussion posts"
+    },
+    "/admins/{userId}": {
+      "schema": "Admin",
+      "description": "Global administrators"
+    }
+  }
+}

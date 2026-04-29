@@ -1,0 +1,158 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // 0. Default Deny
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == "jagirdarrumana22@gmail.com"
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.keys().size() >= 3 &&
+             data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role in ['user', 'admin'] &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('xp' in data) || data.xp is number) &&
+             (!('level' in data) || data.level is number);
+    }
+
+    function isValidSubmission(data) {
+      return data.keys().hasAll(['userId', 'problemId', 'language', 'code', 'status']) &&
+             data.userId == request.auth.uid &&
+             data.problemId is string && data.problemId.size() <= 128 &&
+             data.language is string && data.language.size() <= 50 &&
+             data.code is string && data.code.size() <= 100000 &&
+             data.status in ['pending', 'accepted', 'wrong_answer', 'error'];
+    }
+
+    function isValidMatch(data) {
+      return data.keys().hasAll(['problemId', 'creatorId', 'status', 'creatorProgress', 'opponentProgress', 'durationMs', 'isPrivate', 'createdAt']) &&
+             data.creatorId == request.auth.uid &&
+             data.problemId is string && data.problemId.size() <= 128 &&
+             data.status in ['waiting', 'active', 'completed'] &&
+             data.creatorProgress is number &&
+             data.opponentProgress is number &&
+             data.durationMs is number &&
+             data.isPrivate is bool;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming()) && (incoming().role == 'user' || isAdmin());
+      allow update: if (isOwner(userId) && isValidUser(incoming()) && incoming().role == existing().role) || isAdmin();
+    }
+
+    match /problems/{problemId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /contests/{contestId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow get: if isOwner(existing().userId) || isAdmin();
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isEmailVerified() && isValidSubmission(incoming()) && exists(/databases/$(database)/documents/problems/$(incoming().problemId));
+      allow update: if isAdmin();
+    }
+
+    match /matches/{matchId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.isPrivate == false || resource.data.creatorId == request.auth.uid || resource.data.opponentId == request.auth.uid || isAdmin());
+
+      allow create: if isEmailVerified() && 
+                      isValidMatch(incoming()) &&
+                      incoming().status == "waiting";
+
+      allow update: if isEmailVerified() && (
+        // Case 1: Opponent joining
+        (existing().status == "waiting" && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['opponentId', 'opponentName', 'opponentPhoto', 'status', 'startTime']) &&
+         incoming().opponentId == request.auth.uid &&
+         incoming().status == "active") ||
+        
+        // Case 2: Progress updates
+        (existing().status == "active" && (
+          (request.auth.uid == existing().creatorId && incoming().diff(existing()).affectedKeys().hasOnly(['creatorProgress'])) ||
+          (request.auth.uid == existing().opponentId && incoming().diff(existing()).affectedKeys().hasOnly(['opponentProgress']))
+        )) ||
+
+        // Case 3: Completing/Winning
+        (existing().status == "active" && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'winnerId', 'winnerName']) &&
+         (request.auth.uid == existing().creatorId || request.auth.uid == existing().opponentId) &&
+         incoming().status == "completed") ||
+        
+        isAdmin()
+      );
+    }
+
+    match /admins/{userId} {
+      allow read: if isAdmin();
+    }
+
+    match /forum_posts/{postId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isEmailVerified() && 
+                    incoming().authorId == request.auth.uid &&
+                    incoming().keys().hasAll(['authorId', 'title', 'content', 'createdAt']);
+      allow update: if isSignedIn() && (
+        (existing().authorId == request.auth.uid && incoming().authorId == request.auth.uid) || 
+        isAdmin()
+      );
+      allow delete: if isSignedIn() && (existing().authorId == request.auth.uid || isAdmin());
+    }
+  }
+}
+
