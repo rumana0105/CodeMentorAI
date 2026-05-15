@@ -282,5 +282,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **v1.3.0** - Interview mode and analytics
 
 ---
-
-Made with ❤️ by the CodeMentorAI Team
