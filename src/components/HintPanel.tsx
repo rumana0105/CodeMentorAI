@@ -4,14 +4,22 @@ import ReactMarkdown from "react-markdown";
 import { Hint } from "../types";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { chatWithMentor } from "../services/gemini";
 
 interface HintPanelProps {
   hints: Hint[];
   isLoading: boolean;
-  onGetHint: () => void;
+  onGetHint: (isStuck?: boolean) => void;
   onExplainHint: (index: number) => void;
   isExplanationLoading: number | null;
   hintLevel: number;
+  mentorState: "idle" | "observing" | "struggling" | "stuck";
+  problemTitle: string;
+  problemDescription: string;
+  code: string;
+  language: string;
+  lastError: string | null;
+  onBeginnerDebug?: () => void;
 }
 
 export default function HintPanel({ 
@@ -20,9 +28,47 @@ export default function HintPanel({
   onGetHint, 
   onExplainHint, 
   isExplanationLoading,
-  hintLevel
+  hintLevel,
+  mentorState,
+  problemTitle,
+  problemDescription,
+  code,
+  language,
+  lastError,
+  onBeginnerDebug
 }: HintPanelProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [askInput, setAskInput] = React.useState("");
+  const [askResponse, setAskResponse] = React.useState<string | null>(null);
+  const [isAsking, setIsAsking] = React.useState(false);
+  
+  const handleAskMentor = async () => {
+    const message = askInput.trim();
+    if (!message || isAsking) return;
+    setIsAsking(true);
+    setAskResponse(null);
+    setAskInput("");
+
+    const truncatedCode = (code || "").slice(0, 1800);
+    const context = [
+      `Problem: "${problemTitle}"`,
+      `Language: ${language}`,
+      `Description: ${problemDescription}`,
+      lastError ? `Last error: ${lastError}` : null,
+      truncatedCode ? `Current code (truncated):\n${truncatedCode}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    try {
+      const response = await chatWithMentor(message, [], language, context);
+      setAskResponse(response);
+    } catch (err) {
+      setAskResponse("Sorry, I could not reach the mentor right now. Please try again.");
+    } finally {
+      setIsAsking(false);
+    }
+  };
 
   const levelLabels = ["Conceptual", "Approach", "Pseudocode"];
   const levelIcons = [<Brain size={14} />, <Activity size={14} />, <Layers size={14} />];
@@ -65,20 +111,93 @@ export default function HintPanel({
         {hints.length === 0 && !isLoading && (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-6">
             <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary rotate-12 group-hover:rotate-0 transition-transform shadow-inner">
-              <HelpCircle size={40} />
+              {mentorState === "struggling" || mentorState === "stuck" ? <AlertCircle size={40} /> : <HelpCircle size={40} />}
             </div>
             <div className="space-y-2">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">System_Idle</p>
-              <p className="text-[10px] font-medium text-slate-400 max-w-[220px] leading-relaxed italic font-serif">
-                "The first step is always the hardest. I'm here to illuminate the path without walking it for you."
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+                {mentorState === "idle" ? "Idle" : mentorState === "observing" ? "Observing" : mentorState === "struggling" ? "Struggling" : "Stuck"}
+              </p>
+              <p className="text-[10px] font-medium text-slate-400 max-w-[240px] leading-relaxed italic font-serif">
+                {mentorState === "idle" && "Run your first test and I will watch for where things diverge."}
+                {mentorState === "observing" && "I am watching your results. If tests fail, I will suggest the smallest next step."}
+                {mentorState === "struggling" && "A mismatch is detected. Want a hint that nudges you toward the right direction?"}
+                {mentorState === "stuck" && "You are stuck. I can walk you through the logic step-by-step without jumping to the full answer."}
               </p>
             </div>
-            <button
-               onClick={onGetHint}
-               className="bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
-            >
-               Initiate Hint Sequence <ChevronRight size={14} />
-            </button>
+            <div className="flex flex-col gap-3">
+              {mentorState === "struggling" ? (
+                <button
+                  onClick={() => onGetHint(false)}
+                  className="bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+                >
+                  Suggest Hint <ChevronRight size={14} />
+                </button>
+              ) : null}
+              {mentorState === "stuck" ? (
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => onBeginnerDebug?.()}
+                    disabled={!onBeginnerDebug}
+                    className="bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Step-by-step Help <ChevronRight size={14} />
+                  </button>
+                  <button
+                    onClick={() => onGetHint(true)}
+                    className="bg-white/10 text-primary px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/20 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    Deeper Hint <ChevronRight size={14} />
+                  </button>
+                </div>
+              ) : null}
+              {mentorState === "idle" || mentorState === "observing" ? (
+                <button
+                  onClick={() => onGetHint(false)}
+                  className="bg-white/10 text-primary px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/20 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+                >
+                  Get a Gentle Hint <ChevronRight size={14} />
+                </button>
+              ) : null}
+            </div>
+
+            {/* Ask Mentor */}
+            <div className="w-full max-w-md">
+              <div className="bg-slate-50 dark:bg-black/20 p-4 rounded-3xl border border-slate-100 dark:border-slate-800/60 text-left">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
+                  <Brain size={12} className="text-[#4F46E5]" />
+                  Ask Mentor
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    value={askInput}
+                    onChange={(e) => setAskInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAskMentor()}
+                    placeholder="e.g. Explain why my output differs from expected"
+                    className="flex-1 bg-transparent border border-[#E5E7EB] dark:border-[#334155] rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
+                    disabled={isAsking}
+                  />
+                  <button
+                    onClick={handleAskMentor}
+                    disabled={isAsking || !askInput.trim()}
+                    className="px-4 py-3 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover disabled:opacity-50 transition-all"
+                  >
+                    {isAsking ? "Asking..." : "Send"}
+                  </button>
+                </div>
+
+                {askResponse ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 p-3 rounded-2xl bg-primary/5 border border-primary/20"
+                  >
+                    <div className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+                      <ReactMarkdown>{askResponse}</ReactMarkdown>
+                    </div>
+                  </motion.div>
+                ) : null}
+              </div>
+            </div>
           </div>
         )}
 
@@ -161,7 +280,7 @@ export default function HintPanel({
                 <p className="text-[9px] text-slate-400 italic font-serif">Still facing interference? Reveal the next layer of complexity.</p>
              </div>
              <button
-               onClick={onGetHint}
+               onClick={() => onGetHint(false)}
                className="bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-primary-hover shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
              >
                 Unlock Next Hint <ChevronRight size={14} />
@@ -170,15 +289,9 @@ export default function HintPanel({
         )}
 
         {isLoading && (
-          <div className="flex flex-col gap-3 p-6 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl animate-pulse">
-             <div className="flex items-center gap-2 mb-2">
-                <div className="w-4 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
-                <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded w-24" />
-             </div>
-             <div className="space-y-2">
-                <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded w-full" />
-                <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded w-5/6" />
-             </div>
+          <div className="flex flex-col items-center justify-center gap-4 p-8 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl animate-pulse">
+             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Extracting Logic...</p>
           </div>
         )}
       </div>

@@ -3,7 +3,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db, signInWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "../services/firebase";
 import { getUserProgress, createUserProfile } from "../services/db";
 import { UserProgress } from "../types";
-import { onSnapshot, doc } from "firebase/firestore";
+import { onSnapshot, doc, setDoc } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
@@ -46,6 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (authUser) {
+        // STEP 5: VERIFY COLLECTION ACCESS (Test manual write)
+        try {
+          await setDoc(doc(db, "test", "testDoc"), { ok: true });
+          console.log("SUCCESS: Manual test write to 'test' collection succeeded.");
+        } catch (testError) {
+          console.error("FAILURE: Manual test write failed. Firestore might not be configured correctly.", testError);
+        }
+
         // First check if profile exists, if not create it
         let initialProfile = await getUserProgress(authUser.uid);
         if (!initialProfile) {

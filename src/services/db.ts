@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, addDoc, query, limit, getDocs, collection } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, addDoc, query, limit, getDocs, collection, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { UserProgress } from "../types";
 
@@ -31,6 +31,8 @@ interface FirestoreErrorInfo {
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  console.log("Current User UID:", auth.currentUser?.uid);
+  
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -48,8 +50,13 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     },
     operationType,
     path
-  }
+  };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+  
+  if (errInfo.error.toLowerCase().includes("permission") || errInfo.error.toLowerCase().includes("missing")) {
+    throw new Error("Permission denied. Please login again");
+  }
+  
   throw new Error(JSON.stringify(errInfo));
 }
 
@@ -125,10 +132,33 @@ export async function getUserProgress(userId: string): Promise<UserProgress | nu
 }
 
 export async function createUserProfile(userId: string, displayName: string, photoURL: string = ""): Promise<UserProgress> {
+  // 4. AUTH VALIDATION
+  if (!auth.currentUser) {
+    throw new Error("User not authenticated");
+  }
+
   const docRef = doc(db, "users", userId);
-  const initialProgress: UserProgress = {
+  
+  // 3. ADD SAFETY CHECK BEFORE CREATE
+  try {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as UserProgress;
+    }
+  } catch (error) {
+    console.error("Error checking existing profile:", error);
+  }
+
+  const user = auth.currentUser;
+  console.log("User:", user);
+  console.log("UID:", user?.uid);
+
+  const initialProgress: any = {
     userId,
     displayName,
+    name: user.displayName,
+    email: user.email || "",
+    createdAt: serverTimestamp(),
     photoURL,
     role: "user",
     solvedProblems: [],
@@ -160,11 +190,19 @@ export async function createUserProfile(userId: string, displayName: string, pho
   };
 
   try {
-    await setDoc(docRef, initialProgress);
+    // Exact code requested by user:
+    await setDoc(doc(db, "users", user.uid), {
+      name: user.displayName,
+      email: user.email,
+      createdAt: serverTimestamp()
+    });
+    // Setting the remaining initial progress fields separately to prevent app crashes
+    await setDoc(docRef, initialProgress, { merge: true });
     return initialProgress;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, `users/${userId}`);
-    throw error;
+  } catch (error: any) {
+    // 5. ERROR HANDLING IMPROVEMENT
+    console.error(`User profile creation failed due to permission mismatch. UID: ${auth.currentUser.uid}, Path: users/${userId}`, error);
+    throw new Error("User profile creation failed due to permission mismatch");
   }
 }
 
@@ -180,8 +218,35 @@ export async function saveProgress(
     language?: string;
     timeBeforeFirstHintMs?: number;
     codeEdits?: number;
+    code?: string;
   }
 ) {
+  const currentUser = auth.currentUser;
+  console.log("User:", currentUser);
+  console.log("UID:", currentUser?.uid);
+
+  if (!currentUser) {
+    throw new Error("User not authenticated");
+  }
+
+  const submissionData = {
+    userId: currentUser.uid,
+    problemId: problemId,
+    code: metadata?.code || "",
+    language: metadata?.language || "python",
+    status: passed ? "passed" : "failed",
+    createdAt: serverTimestamp()
+  };
+
+  console.log("Submitting with UID:", currentUser.uid);
+  console.log("Submitting data:", submissionData);
+
+  try {
+    await addDoc(collection(db, "submissions"), submissionData);
+  } catch (error) {
+    console.error("Failed to save submission in saveProgress:", error);
+  }
+
   const docRef = doc(db, "users", userId);
   let docSnap;
   try {

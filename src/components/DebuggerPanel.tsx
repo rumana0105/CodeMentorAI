@@ -84,6 +84,15 @@ export default function DebuggerPanel({ steps, currentStepIndex, onStepChange, o
                 <p className="text-xs text-red-400 font-mono">{currentStep.error}</p>
               </div>
             )}
+
+            {currentStep.explanation && (
+              <div className="bg-[#4F46E5]/10 border border-[#4F46E5]/20 p-3 rounded-xl">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-indigo-200 mb-2">
+                  Explanation
+                </h4>
+                <p className="text-xs text-slate-100/90 leading-relaxed">{currentStep.explanation}</p>
+              </div>
+            )}
           </div>
         )}
       </div>

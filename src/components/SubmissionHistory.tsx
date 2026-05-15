@@ -53,14 +53,11 @@ export default function SubmissionHistory() {
         });
         setProblems(problemsMap);
 
-        // Fetch user submissions
-        const q = query(
-          collection(db, "submissions"),
-          where("userId", "==", user.uid),
-          orderBy("timestamp", "desc")
-        );
-        const submissionsSnap = await getDocs(q);
-        const allSubs = submissionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
+        // Fetch user submissions from API
+        const res = await fetch(`/api/submissions/${user.uid}`);
+        if (!res.ok) throw new Error("Failed to fetch submissions");
+        const data = await res.json();
+        const allSubs = data.submissions || [];
         
         // Calculate attempts per problem
         const problemAttempts: Record<string, number> = {};
@@ -107,6 +104,7 @@ export default function SubmissionHistory() {
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">AI Score</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">Attempts</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">Language</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">Time Taken</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">Date</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-[#9CA3AF] text-right">Actions</th>
               </tr>
@@ -153,6 +151,9 @@ export default function SubmissionHistory() {
                     {sub.language}
                   </td>
                   <td className="px-6 py-4 text-sm text-[#6B7280] dark:text-[#94A3B8]">
+                    {sub.timeSpentMs ? `${Math.floor(sub.timeSpentMs / 60000)}m ${Math.floor((sub.timeSpentMs % 60000) / 1000)}s` : "N/A"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-[#6B7280] dark:text-[#94A3B8]">
                     {new Date(sub.timestamp).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -188,7 +189,7 @@ export default function SubmissionHistory() {
               ))}
               {submissions.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#94A3B8]">
+                  <td colSpan={8} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#94A3B8]">
                     <p className="text-sm">No submissions yet. Start solving problems to see your history!</p>
                   </td>
                 </tr>

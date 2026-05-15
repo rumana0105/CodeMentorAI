@@ -31,6 +31,8 @@ interface FirestoreErrorInfo {
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  console.log("Current User UID:", auth.currentUser?.uid);
+
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -48,12 +50,17 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     },
     operationType,
     path
-  }
+  };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+  
+  if (errInfo.error.toLowerCase().includes("permission") || errInfo.error.toLowerCase().includes("missing")) {
+    throw new Error("Permission denied. Please login again.");
+  }
+  
   throw new Error(JSON.stringify(errInfo));
 }
 
-const FORUM_COLLECTION = "forum_posts";
+const FORUM_COLLECTION = "community";
 
 export function subscribeToForum(callback: (posts: ForumPost[]) => void) {
   const q = query(collection(db, FORUM_COLLECTION), orderBy("createdAt", "desc"));

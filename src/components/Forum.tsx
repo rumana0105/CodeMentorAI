@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "motion/react";
 export default function Forum() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
   const [newPostCategory, setNewPostCategory] = useState<ForumPost["category"]>("General");
@@ -19,7 +20,10 @@ export default function Forum() {
   const categories = ["All", "General", "Problems", "Career", "Showcase", "Off-topic"];
 
   useEffect(() => {
-    const unsubscribe = subscribeToForum(setPosts);
+    const unsubscribe = subscribeToForum((newPosts) => {
+      setPosts(newPosts);
+      setIsLoading(false);
+    });
     return unsubscribe;
   }, []);
 
@@ -27,7 +31,7 @@ export default function Forum() {
     if (!user || !newPostTitle.trim() || !newPostContent.trim()) return;
     
     await createPost({
-      authorId: user.uid,
+      userId: user.uid,
       authorName: user.displayName || "Anonymous",
       authorPhoto: user.photoURL || "",
       title: newPostTitle,
@@ -35,13 +39,14 @@ export default function Forum() {
       category: newPostCategory,
       tags: [],
       createdAt: new Date().toISOString()
-    });
+    } as any);
 
     setNewPostTitle("");
     setNewPostContent("");
     setIsCreating(false);
   };
 
+  const FORUM_COLLECTION = "community";
   const filteredPosts = posts.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          p.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -175,13 +180,40 @@ export default function Forum() {
           </AnimatePresence>
 
           <div className="space-y-6">
-            {filteredPosts.map(post => (
-              <PostCard key={post.id} post={post} userId={user?.uid || ""} />
-            ))}
-            {filteredPosts.length === 0 && (
-              <div className="p-20 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
-                 <p className="text-slate-400 italic font-serif">No synchronized logs found for this sector. Try modifying your query.</p>
-              </div>
+            {isLoading ? (
+              <>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-white rounded-[2rem] border border-[#E5E7EB] p-8 shadow-sm space-y-4 animate-pulse">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-slate-200 rounded-[1.5rem]" />
+                      <div className="space-y-2 flex-1">
+                        <div className="w-24 h-4 bg-slate-200 rounded-md" />
+                        <div className="w-1/2 h-6 bg-slate-200 rounded-lg" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-4 border-t border-slate-50">
+                      <div className="w-full h-4 bg-slate-200 rounded-md" />
+                      <div className="w-5/6 h-4 bg-slate-200 rounded-md" />
+                      <div className="w-4/6 h-4 bg-slate-200 rounded-md" />
+                    </div>
+                    <div className="flex gap-4 pt-4 border-t border-slate-50">
+                      <div className="w-20 h-6 bg-slate-200 rounded-md" />
+                      <div className="w-20 h-6 bg-slate-200 rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {filteredPosts.map(post => (
+                  <PostCard key={post.id} post={post} userId={user?.uid || ""} />
+                ))}
+                {filteredPosts.length === 0 && (
+                  <div className="p-20 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
+                     <p className="text-slate-400 italic font-serif">No synchronized logs found for this sector. Try modifying your query.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -199,11 +231,11 @@ function PostCard({ post, userId }: { post: ForumPost, userId: string }) {
     if (!replyContent.trim()) return;
     await addReply(post.id, {
       id: Math.random().toString(36).substr(2, 9),
-      authorId: userId,
+      userId: userId,
       authorName: "You",
       content: replyContent,
       createdAt: new Date().toISOString()
-    });
+    } as any);
     setReplyContent("");
     setIsReplying(false);
   };

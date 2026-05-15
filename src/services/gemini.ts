@@ -47,43 +47,63 @@ export async function generateHint(
     { "type": "beginner" | "logical" | "debugging", "content": "hint text here", "isStuckTrigger": boolean }
   `;
 
-  try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            type: { type: Type.STRING },
-            content: { type: Type.STRING },
-            isStuckTrigger: { type: Type.BOOLEAN }
-          },
-          required: ["type", "content", "isStuckTrigger"]
+  let retries = 2;
+  while (retries >= 0) {
+    try {
+      const ai = getAI();
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              type: { type: Type.STRING },
+              content: { type: Type.STRING },
+              isStuckTrigger: { type: Type.BOOLEAN }
+            },
+            required: ["type", "content", "isStuckTrigger"]
+          }
         }
+      });
+
+      return JSON.parse(response.text || "{}");
+    } catch (err) {
+      if (retries > 0) {
+        retries--;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
       }
-    });
 
-    return JSON.parse(response.text || "{}");
-  } catch (err) {
-    console.error("AI Hint Generation Error:", err);
-    const message = err instanceof Error ? err.message : String(err);
-    
-    let content = "I'm having trouble analyzing your code right now. Try again in a moment.";
-    if (message.includes("GEMINI_API_KEY")) {
-      content = "AI Mentor is unavailable because the Gemini API key is not configured. Please add it in Settings.";
-    } else if (message.includes("429") || message.includes("quota")) {
-      content = "The AI Mentor is currently resting due to high demand (API rate limit exceeded). Please try again in 60 seconds or consider using a paid API key for uninterrupted access.";
+      console.error("AI Hint Generation Error:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      
+      try {
+        await fetch("/api/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ error: message, context: "AI Hint API" })
+        });
+      } catch (e) {
+        // ignore log error
+      }
+      
+      let content = "I'm having trouble analyzing your code right now. Try again in a moment.";
+      if (message.includes("GEMINI_API_KEY")) {
+        content = "AI Mentor is unavailable because the Gemini API key is not configured. Please add it in Settings.";
+      } else if (message.includes("429") || message.includes("quota")) {
+        content = "AI hints temporarily unavailable due to usage limits. Please try again later.";
+      }
+
+      return {
+        type: "logical",
+        content,
+        isStuckTrigger: isStuckTriggered
+      };
     }
-
-    return {
-      type: "logical",
-      content,
-      isStuckTrigger: isStuckTriggered
-    };
   }
+  return { type: "logical", content: "Fallback error.", isStuckTrigger: false };
 }
 
 export async function explainHintConcept(hint: Hint, problem: Problem, language: string = "python"): Promise<string> {

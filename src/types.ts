@@ -175,6 +175,13 @@ export interface ExecutionResult {
   actualOutput: string;
   passed: boolean;
   error?: boolean;
+  // Populated when the runtime produced stderr or when compilation/runtime fails.
+  errorLogs?: string;
+  // True when the server couldn't find required runtime/compilers (e.g. Python, gcc, javac).
+  environmentError?: boolean;
+  timedOut?: boolean;
+  // Total time for this test case execution.
+  durationMs?: number;
 }
 
 export interface BattleMatch {

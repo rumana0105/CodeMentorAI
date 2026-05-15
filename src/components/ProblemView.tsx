@@ -10,7 +10,7 @@ import { generateHint, reviewCode, explainHintConcept, generateFullSolution } fr
 import { saveProgress } from "../services/db";
 import { useAuth } from "./AuthProvider";
 import { analyzeBehavior, generateDetailedFeedback } from "../services/gemini";
-import { Play, Send, ChevronLeft, Info, BookOpen, ShieldCheck, Bug, Lightbulb, UserCheck, Timer, History, ShieldAlert, Cpu, Brain, Activity, Layers, Terminal, ChevronRight, HelpCircle, Users, Github } from "lucide-react";
+import { Play, Send, ChevronLeft, Info, BookOpen, ShieldCheck, Bug, Lightbulb, UserCheck, Timer, History, ShieldAlert, Cpu, Brain, Activity, Layers, Terminal, ChevronRight, HelpCircle, Users, Github, ChevronDown } from "lucide-react";
 import { cn } from "../lib/utils";
 import CircularProgress from "./ui/CircularProgress";
 import { collection, addDoc, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
@@ -26,6 +26,29 @@ import { collabService } from "../services/collabService";
 import CollaborationRoom from "./CollaborationRoom";
 import { useRef } from "react";
 
+const STARTER_TEMPLATES: Record<string, string> = {
+  java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`,
+  c: `#include <stdio.h>\nint main() {\n    printf("Hello, World!");\n    return 0;\n}`,
+  cpp: `#include <iostream>\nusing namespace std;\nint main() {\n    cout << "Hello, World!";\n    return 0;\n}`,
+  python: `print("Hello, World!")`,
+  javascript: `console.log("Hello, World!");`,
+  ruby: `puts "Hello, World!"`
+};
+
+function InfoBox({ title, content, icon: Icon }: any) {
+  return (
+    <div className="bg-[#F9FAFB] dark:bg-[#0F172A] p-4 rounded-xl border border-[#E5E7EB] dark:border-[#334155]">
+      <div className="flex items-center gap-2 mb-1 text-[#4F46E5] dark:text-[#818CF8]">
+        <Icon size={14} />
+        <span className="text-[10px] font-bold uppercase tracking-wider">{title}</span>
+      </div>
+      <div className="text-xs text-[#1A1A1A] dark:text-gray-300 leading-relaxed prose prose-xs dark:prose-invert max-w-none">
+        <MarkdownRenderer content={content} />
+      </div>
+    </div>
+  );
+}
+
 export default function ProblemView() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,13 +58,13 @@ export default function ProblemView() {
 
   useEffect(() => {
     if (!id) return;
-    
+
     const fetchProblem = async () => {
       setIsLoadingProblem(true);
       try {
         const docRef = doc(db, "problems", id);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
           setProblem({ id: docSnap.id, ...docSnap.data() } as Problem);
         } else {
@@ -70,6 +93,38 @@ export default function ProblemView() {
 
   const [language, setLanguage] = useState(profile?.preferredLanguage || "python");
   const [currentCodes, setCurrentCodes] = useState<Record<string, string>>({});
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setIsLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang);
+    setIsLangDropdownOpen(false);
+    if (!currentCodes[newLang] || currentCodes[newLang].trim() === "") {
+      setCurrentCodes(prev => ({
+        ...prev,
+        [newLang]: STARTER_TEMPLATES[newLang] || ""
+      }));
+    }
+  };
+
+  useEffect(() => {
+    if (problem && !currentCodes[language] && STARTER_TEMPLATES[language]) {
+      setCurrentCodes(prev => ({
+        ...prev,
+        [language]: STARTER_TEMPLATES[language]
+      }));
+    }
+  }, [problem, language, currentCodes]);
 
   // Collaboration states
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -140,7 +195,7 @@ export default function ProblemView() {
   }, [currentCodes, language, activeSessionId, user]);
 
   const codes = currentCodes[language] || "";
-  
+
   const [results, setResults] = useState<ExecutionResult[]>([]);
   const [hints, setHints] = useState<Hint[]>([]);
   const [review, setReview] = useState<CodeReview | null>(null);
@@ -154,7 +209,7 @@ export default function ProblemView() {
   const [isDebugLoading, setIsDebugLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"description" | "output" | "review" | "debug" | "solutions" | "aisolution">("description");
   const [peerSolutions, setPeerSolutions] = useState<Submission[]>([]);
-  
+
   // Authenticity states
   const [hintsTakenCount, setHintsTakenCount] = useState<number>(0);
   const [solutionViewed, setSolutionViewed] = useState<boolean>(false);
@@ -163,8 +218,8 @@ export default function ProblemView() {
   const [isSolutionLoading, setIsSolutionLoading] = useState(false);
   const [showSolutionConfirm, setShowSolutionConfirm] = useState(false);
   const [showInterviewConfirm, setShowInterviewConfirm] = useState(false);
-  const [submissionFeedback, setSubmissionFeedback] = useState<{message: string; type: 'success' | 'error'} | null>(null);
-  
+  const [submissionFeedback, setSubmissionFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   // Real-time scores for feedback
   const [liveDependencyScore, setLiveDependencyScore] = useState(0);
   const [liveThinkingScore, setLiveThinkingScore] = useState(100);
@@ -176,8 +231,14 @@ export default function ProblemView() {
   const [copyPasteCount, setCopyPasteCount] = useState<number>(0);
   const [timeBeforeFirstHintMs, setTimeBeforeFirstHintMs] = useState<number | null>(null);
   const [versionHistory, setVersionHistory] = useState<CodeVersion[]>([]);
+  const [autosaveEnabled, setAutosaveEnabled] = useState(true);
+  const [runOnSaveEnabled, setRunOnSaveEnabled] = useState(false);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!autosaveEnabled) setRunOnSaveEnabled(false);
+  }, [autosaveEnabled]);
 
   // GitHub branch states
   const [branches, setBranches] = useState<any[]>([]);
@@ -188,16 +249,16 @@ export default function ProblemView() {
 
   useEffect(() => {
     if (profile?.github) {
-       const fetchBranches = async () => {
-         try {
-           const res = await fetch(`/api/github/branches?userId=${user?.uid}`);
-           const data = await res.json();
-           if (Array.isArray(data)) setBranches(data);
-         } catch (e) {
-           console.error("Failed to fetch branches", e);
-         }
-       };
-       fetchBranches();
+      const fetchBranches = async () => {
+        try {
+          const res = await fetch(`/api/github/branches?userId=${user?.uid}`);
+          const data = await res.json();
+          if (Array.isArray(data)) setBranches(data);
+        } catch (e) {
+          console.error("Failed to fetch branches", e);
+        }
+      };
+      fetchBranches();
     }
   }, [profile, user]);
 
@@ -229,20 +290,20 @@ export default function ProblemView() {
 
   const getInitialHintLevel = () => {
     if (!profile) return 1;
-    switch(profile.hintLevel) {
+    switch (profile.hintLevel) {
       case "light": return 1;
       case "medium": return 2;
       case "deep": return 3;
       default: return 1;
     }
   };
-  
+
   const [hintLevel, setHintLevel] = useState<number>(1);
 
   const handleGetHint = async (isStuck: boolean = false) => {
     if (!problem || interviewMode) return;
     if (isStuck) setLastStuckHintAt(Date.now());
-    
+
     if (timeBeforeFirstHintMs === null) {
       setTimeBeforeFirstHintMs(Date.now() - startTime);
     }
@@ -252,17 +313,17 @@ export default function ProblemView() {
       const currentLastError = results.find((r) => !r.passed)?.actualOutput;
       const effectiveLevel = isStuck ? 1 : hintLevel;
       const hint = await generateHint(
-        problem, 
-        codes, 
-        language, 
-        currentLastError, 
-        effectiveLevel, 
+        problem,
+        codes,
+        language,
+        currentLastError,
+        effectiveLevel,
         isStuck
       );
 
       setHints((prev) => [...prev, { ...hint, level: effectiveLevel }]);
       setHintsTakenCount(prev => prev + 1);
-      
+
       // Track AI interaction in history
       setVersionHistory(prev => [...prev, {
         code: codes,
@@ -291,21 +352,8 @@ export default function ProblemView() {
     }
   };
 
-  // Inactivity detection
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Don't trigger if already busy or if hints were recently given or interview mode
-      if (isHintLoading || isExecuting || isSubmitting || interviewMode) return;
-      if (Date.now() - lastStuckHintAt < 120000) return; // Wait at least 2 mins between stuck hints
-      
-      const inactiveMinutes = (Date.now() - lastCodeChangeAt) / (1000 * 60);
-      if (inactiveMinutes >= 5) {
-        handleGetHint(true);
-      }
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, [lastCodeChangeAt, isHintLoading, isExecuting, isSubmitting, lastStuckHintAt, problem, codes, language, results, hintLevel, interviewMode]);
+  // Inactivity detection (Disabled to optimize API usage and avoid unexpected hints)
+  // useEffect(() => { ... }, [...]);
 
   const handleCodeChange = (newCode: string) => {
     const now = Date.now();
@@ -313,7 +361,7 @@ export default function ProblemView() {
     if (newCode === prevCode) return;
 
     setLastCodeChangeAt(now);
-    
+
     // Simple copy-paste detection
     if (newCode.length - prevCode.length > 50) {
       setCopyPasteCount(prev => prev + 1);
@@ -341,12 +389,15 @@ export default function ProblemView() {
       trigger = "autosave";
     }
 
-    if (shouldSave) {
+    if (shouldSave && autosaveEnabled) {
       setVersionHistory(prev => [...prev, {
         code: newCode,
         timestamp: new Date().toISOString(),
         trigger
       }]);
+      if (runOnSaveEnabled && !interviewMode) {
+        void handleRun(newCode);
+      }
     }
 
     setCurrentCodes(prev => ({ ...prev, [language]: newCode }));
@@ -377,8 +428,8 @@ export default function ProblemView() {
   useEffect(() => {
     if (problem && activeTab === "solutions") {
       const q = query(
-        collection(db, "submissions"), 
-        where("problemId", "==", problem.id), 
+        collection(db, "submissions"),
+        where("problemId", "==", problem.id),
         where("status", "==", "accepted"),
         limit(10)
       );
@@ -388,7 +439,7 @@ export default function ProblemView() {
     }
   }, [activeTab, problem]);
 
-  const handleDebug = async () => {
+  const handleDebug = async (beginnerMode: boolean = false) => {
     if (!problem) return;
     setIsDebugLoading(true);
     setActiveTab("debug");
@@ -396,7 +447,12 @@ export default function ProblemView() {
       const response = await fetch("/api/debug", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: codes, language, input: problem?.testCases[0]?.input || "" }),
+        body: JSON.stringify({
+          code: codes,
+          language,
+          input: problem?.testCases[0]?.input || "",
+          beginnerMode
+        }),
       });
       const data = await response.json();
       setDebugSteps(data.steps || []);
@@ -408,55 +464,60 @@ export default function ProblemView() {
     }
   };
 
-  if (isLoadingProblem) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#4F46E5] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
-  if (!problem) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center">
-        <h2 className="text-2xl font-bold mb-2">Problem Not Found</h2>
-        <button onClick={() => navigate("/")} className="text-[#4F46E5] font-semibold">
-          Return to Dashboard
-        </button>
-      </div>
-    );
-  }
+  const visibleLanguages = problem?.languages || [];
+  const getLanguageAccent = (lang: string) => {
+    switch (lang) {
+      case "python":
+        return "text-sky-400";
+      case "javascript":
+        return "text-yellow-400";
+      case "typescript":
+        return "text-cyan-400";
+      case "cpp":
+        return "text-indigo-400";
+      case "c":
+        return "text-slate-400";
+      case "java":
+        return "text-red-400";
+      case "ruby":
+        return "text-purple-400";
+      default:
+        return "text-[#4F46E5]";
+    }
+  };
 
-  const visibleLanguages = problem.languages;
-
-  const handleRun = async () => {
+  const handleRun = async (codeOverride?: string) => {
     if (!problem) return;
+    if (isExecuting || isSubmitting) return;
     setIsExecuting(true);
     setActiveTab("output");
     try {
+      const codeToExecute = codeOverride ?? codes;
       const response = await fetch("/api/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code: codes,
+          code: codeToExecute,
           language,
           testCases: problem.testCases,
         }),
       });
       const data = await response.json();
       setResults(data.results);
-      
+
       // Error tracking for auto-hints
       const firstFailed = data.results.find((r: any) => !r.passed);
       if (firstFailed) {
-        const errorMsg = firstFailed.actualOutput;
+        const errorMsg = firstFailed.errorLogs || firstFailed.actualOutput;
         if (errorMsg === lastError) {
           const newCount = errorCount + 1;
           setErrorCount(newCount);
-          if (newCount >= 3 && Date.now() - lastStuckHintAt >= 120000) {
+          // Auto-hint triggering disabled to optimize API usage
+          /* if (newCount >= 3 && Date.now() - lastStuckHintAt >= 120000) {
             handleGetHint(true);
             setErrorCount(0); // Reset after triggering
-          }
+          } */
         } else {
           setLastError(errorMsg);
           setErrorCount(1);
@@ -473,7 +534,18 @@ export default function ProblemView() {
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      setSubmissionFeedback({ message: "Please login again", type: 'error' });
+      throw new Error("User not authenticated");
+    }
+
     if (!problem) return;
+
+    if (!codes || codes.trim() === "") {
+      setSubmissionFeedback({ message: "Invalid code input. Please write some code before submitting.", type: 'error' });
+      return;
+    }
+
     setIsSubmitting(true);
     setActiveTab("output");
     try {
@@ -491,32 +563,47 @@ export default function ProblemView() {
         timeSpentMs
       );
 
+      const payload = {
+        code: codes,
+        language,
+        problemId: problem.id,
+        userId: user?.uid,
+        problemTitle: problem.title,
+        aiUsage: behaviorAnalysis.dependencyScore,
+        timeSpent: formatTime(timeSpentMs),
+        interviewMode,
+        branch: selectedBranch
+      };
+      
+      console.log("Submit Payload:", payload);
+
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: codes,
-          language,
-          problemId: problem.id,
-          userId: user?.uid,
-          problemTitle: problem.title,
-          aiUsage: behaviorAnalysis.dependencyScore,
-          timeSpent: formatTime(timeSpentMs),
-          interviewMode,
-          branch: selectedBranch
-        }),
+        body: JSON.stringify(payload),
       });
+      
       const data = await response.json();
+      console.log("Submit Response:", data);
+
+      if (!response.ok || !data.success) {
+        setSubmissionFeedback({
+          message: data.message || "Server error, please try again.",
+          type: 'error'
+        });
+        return;
+      }
+
       setResults(data.results);
       const allPassed = data.allPassed;
-      
-      if (user) {
+
+      if (user && data.results) {
         const detailedFeedback = await generateDetailedFeedback(
           problem,
           codes,
           language
         );
-        
+
         // Save to progress
         await saveProgress(user.uid, problem.id, allPassed, {
           hintsTaken: hintsTakenCount,
@@ -525,9 +612,10 @@ export default function ProblemView() {
           category: problem.category,
           language: language,
           timeBeforeFirstHintMs: timeBeforeFirstHintMs || 0,
-          codeEdits: versionHistory.length
+          codeEdits: versionHistory.length,
+          code: codes
         });
-        
+
         // Calculate authenticity for the submission record
         let authenticity: "manual" | "partial_ai" | "full_ai" = "manual";
         if (solutionViewed) authenticity = "full_ai";
@@ -535,7 +623,8 @@ export default function ProblemView() {
 
         // Save to submissions collection
         await addDoc(collection(db, "submissions"), {
-          userId: user.uid,
+          user_id: user.uid,
+          userId: user.uid, // Also included for backward compatibility with existing components
           problemId: problem.id,
           language,
           code: codes,
@@ -563,18 +652,19 @@ export default function ProblemView() {
       }
 
       if (allPassed) {
-        setSubmissionFeedback({ 
-          message: "Congratulations! You solved the problem and passed all test cases (including hidden ones).", 
-          type: 'success' 
+        setSubmissionFeedback({
+          message: "Congratulations! You solved the problem and passed all test cases (including hidden ones).",
+          type: 'success'
         });
       } else {
-        setSubmissionFeedback({ 
-          message: "Some test cases failed. Check the output and try again.", 
-          type: 'error' 
+        setSubmissionFeedback({
+          message: "Some test cases failed. Check the output and try again.",
+          type: 'error'
         });
       }
     } catch (error) {
       console.error("Submission failed", error);
+      setSubmissionFeedback({ message: "Code execution failed or network error occurred. Please try again.", type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -646,6 +736,42 @@ export default function ProblemView() {
     }
   };
 
+  const mentorState: "idle" | "observing" | "struggling" | "stuck" = React.useMemo(() => {
+    // The state-based "empty mentor" UI is only visible when there are no hints yet.
+    if (interviewMode) return "idle";
+
+    if (!problem) return "idle";
+    if (hints.length > 0) return "observing";
+
+    const hasResults = results.length > 0;
+    if (!hasResults) return codes.trim().length > 0 ? "observing" : "idle";
+
+    const firstFailed = results.find((r) => !r.passed);
+    if (!firstFailed) return "idle";
+
+    const isStuck = errorCount >= 2 || (Date.now() - lastStuckHintAt < 120000);
+    return isStuck ? "stuck" : "struggling";
+  }, [interviewMode, problem, hints.length, results, codes, errorCount, lastStuckHintAt]);
+
+  if (isLoadingProblem) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#4F46E5] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!problem) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center">
+        <h2 className="text-2xl font-bold mb-2">Problem Not Found</h2>
+        <button onClick={() => navigate("/")} className="text-[#4F46E5] font-semibold">
+          Go Back Home
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className={`h-[calc(100vh-12rem)] flex flex-col gap-6 transition-colors duration-500 ${interviewMode ? 'dark:bg-[#1a1010]/20' : ''}`}>
       {/* Code Preview Modal */}
@@ -664,38 +790,38 @@ export default function ProblemView() {
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setPreviewVersion(null)}
                 className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl transition-all"
               >
                 ✕
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-auto p-8 bg-[#020617] font-mono text-sm custom-scrollbar relative">
-               <div className="absolute top-4 left-4 flex gap-1.5 pointer-events-none opacity-50">
-                 <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                 <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-               </div>
-               <pre className="text-slate-400 pt-8 leading-relaxed">
-                 {previewVersion.code}
-               </pre>
+              <div className="absolute top-4 left-4 flex gap-1.5 pointer-events-none opacity-50">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+              </div>
+              <pre className="text-slate-400 pt-8 leading-relaxed">
+                {previewVersion.code}
+              </pre>
             </div>
 
             <div className="p-8 border-t border-[#E5E7EB] dark:border-[#334155] flex justify-end gap-4 bg-slate-50 dark:bg-slate-900/50">
-               <button 
-                 onClick={() => setPreviewVersion(null)}
-                 className="px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
-               >
-                 Dismiss
-               </button>
-               <button 
-                 onClick={() => handleRestoreVersion(previewVersion)}
-                 className="px-10 py-3 bg-primary text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary-hover transition-all glow-primary"
-               >
-                 Revert to This Version
-               </button>
+              <button
+                onClick={() => setPreviewVersion(null)}
+                className="px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => handleRestoreVersion(previewVersion)}
+                className="px-10 py-3 bg-primary text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary-hover transition-all glow-primary"
+              >
+                Revert to This Version
+              </button>
             </div>
           </div>
         </div>
@@ -719,35 +845,44 @@ export default function ProblemView() {
             <span className="text-[10px] font-bold uppercase tracking-widest">{typingUser} is coding...</span>
           </div>
         )}
-        <div className="flex items-center gap-6 border-r border-[#E5E7EB] dark:border-[#334155] pr-6">
-          <CircularProgress percentage={liveDependencyScore} size={48} strokeWidth={4} color="#EF4444" label="AI Dep" />
-          <CircularProgress percentage={liveThinkingScore} size={48} strokeWidth={4} color="#10B981" label="Thinking" />
-        </div>
-        
         <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <History size={14} className="text-primary" />
-              <span>Edits</span>
+              <Timer size={14} className="text-primary" />
+              <span>Time Taken</span>
             </div>
-            <span className="text-lg font-black text-slate-800 dark:text-slate-200">{versionHistory.length}</span>
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <Lightbulb size={14} className="text-yellow-400" />
-              <span>Hints</span>
-            </div>
-            <span className="text-lg font-black text-slate-800 dark:text-slate-200">{hintsTakenCount}</span>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              {Math.floor((Date.now() - startTime) / 60000)}m {Math.floor(((Date.now() - startTime) % 60000) / 1000)}s
+            </span>
           </div>
 
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <Timer size={14} className="text-blue-400" />
-              <span>Time Taken</span>
+              <Brain size={14} className="text-red-400" />
+              <span>AI Usage %</span>
             </div>
-            <span className="text-lg font-black text-slate-800 dark:text-slate-200">
-              {Math.floor((Date.now() - startTime) / 60000)}m {Math.floor(((Date.now() - startTime) % 60000) / 1000)}s
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              {Math.round(liveDependencyScore)}%
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Cpu size={14} className="text-blue-400" />
+              <span>Accuracy</span>
+            </div>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              {Math.round(profile?.accuracy || 0)}%
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <History size={14} className="text-indigo-500" />
+              <span>Attempts</span>
+            </div>
+            <span className="text-lg font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              {profile?.attempts?.[problem.id] || 0}
             </span>
           </div>
         </div>
@@ -766,7 +901,7 @@ export default function ProblemView() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-200 dark:border-slate-700">
                 <Github size={12} className="text-gray-500" />
-                <select 
+                <select
                   value={selectedBranch}
                   onChange={(e) => {
                     if (e.target.value === "NEW_BRANCH") {
@@ -785,14 +920,14 @@ export default function ProblemView() {
               </div>
             </div>
           )}
-          <button 
+          <button
             onClick={() => setIsTimelineOpen(!isTimelineOpen)}
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all text-xs font-bold"
           >
             <Layers size={14} />
             Timeline
           </button>
-          
+
           <div className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border",
             interviewMode ? "bg-red-500 text-white border-red-600" : "bg-green-500/10 text-green-500 border-green-500/20"
@@ -817,7 +952,7 @@ export default function ProblemView() {
             <div className="space-y-4 mb-8">
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#9CA3AF] mb-2 block">Branch Name</label>
-                <input 
+                <input
                   type="text"
                   value={newBranchName}
                   onChange={(e) => setNewBranchName(e.target.value.replace(/\s+/g, '-'))}
@@ -827,7 +962,7 @@ export default function ProblemView() {
               </div>
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#9CA3AF] mb-2 block">Base Branch</label>
-                <select 
+                <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
                   className="w-full bg-[#F3F4F6] dark:bg-[#0F172A] border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all font-bold"
@@ -916,23 +1051,43 @@ export default function ProblemView() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#4F46E5] transition-all dark:text-white"
-          >
-            {visibleLanguages.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang.charAt(0).toUpperCase() + lang.slice(1)}
-              </option>
-            ))}
-          </select>
+          <div className="relative" ref={langDropdownRef}>
+            <button
+              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+              className="flex items-center gap-2 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl px-3 py-2.5 min-w-[130px] justify-between transition-all hover:bg-slate-50 dark:hover:bg-[#334155]"
+            >
+              <div className="flex items-center gap-2">
+                <Terminal size={16} className={getLanguageAccent(language)} />
+                <span className="text-sm font-semibold dark:text-white">
+                  {language.charAt(0).toUpperCase() + language.slice(1)}
+                </span>
+              </div>
+              <ChevronDown size={14} className="text-slate-400" />
+            </button>
+
+            {isLangDropdownOpen && (
+              <div className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                {visibleLanguages.map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => handleLanguageChange(lang)}
+                    className={cn(
+                      "w-full text-left px-4 py-2 text-sm font-semibold transition-all hover:bg-[#4F46E5] hover:text-white",
+                      language === lang ? "bg-[#4F46E5] text-white" : "dark:text-white text-slate-800"
+                    )}
+                  >
+                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowCollabPanel(!showCollabPanel)}
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all border",
-              activeSessionId 
-                ? "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100" 
+              activeSessionId
+                ? "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
                 : "bg-white dark:bg-[#1E293B] border-[#E5E7EB] dark:border-[#334155] hover:bg-[#F9FAFB] dark:hover:bg-[#334155] dark:text-white"
             )}
           >
@@ -944,8 +1099,8 @@ export default function ProblemView() {
             title="Toggle proctored mode to simulate a real coding interview"
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all border",
-              interviewMode 
-                ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100" 
+              interviewMode
+                ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
                 : "bg-white dark:bg-[#1E293B] border-[#E5E7EB] dark:border-[#334155] hover:bg-[#F9FAFB] dark:hover:bg-[#334155] dark:text-white"
             )}
           >
@@ -953,7 +1108,7 @@ export default function ProblemView() {
             {interviewMode ? "End Interview" : "Interview Mode"}
           </button>
           <button
-            onClick={handleDebug}
+            onClick={() => handleDebug(false)}
             disabled={isDebugLoading || interviewMode}
             title="Locate logic errors by stepping through code execution"
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-30 dark:text-white"
@@ -980,22 +1135,22 @@ export default function ProblemView() {
             Hint
           </button>
           <button
-            onClick={handleRun}
+            onClick={() => handleRun()}
             disabled={isExecuting || isSubmitting}
             title="Execute script to verify logic (Ctrl + Enter)"
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white border border-primary/40 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all shadow-[0_0_30px_rgba(79,70,229,0.35)] glow-primary disabled:opacity-50"
           >
-            <Play size={14} className="text-slate-400 group-hover:text-green-600 transition-colors" />
-            {isExecuting ? "Running..." : "Run_Code"}
+            <Play size={14} />
+            {isExecuting ? "Running..." : "Run Code"}
           </button>
           <button
             onClick={handleSubmit}
             disabled={isExecuting || isSubmitting}
             title="Initiate final submission and behavioral analysis"
-            className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.05] active:scale-95 transition-all shadow-[0_0_30px_rgba(79,70,229,0.5)] glow-primary disabled:opacity-50"
+            className="flex items-center gap-2 px-8 py-3 bg-white dark:bg-[#1E293B] text-primary rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-95 transition-all border border-primary/30 shadow-sm glow-primary disabled:opacity-50"
           >
             <Send size={16} />
-            {isSubmitting ? "PROCESSING..." : "SUBMIT_TASK"}
+            {isSubmitting ? "Processing..." : "Submit"}
           </button>
         </div>
       </div>
@@ -1005,13 +1160,13 @@ export default function ProblemView() {
         {showCollabPanel && (
           <div className="absolute top-0 left-0 right-0 z-[60] p-6 animate-in slide-in-from-top duration-300">
             <div className="max-w-md mx-auto relative">
-              <button 
+              <button
                 onClick={() => setShowCollabPanel(false)}
                 className="absolute -top-3 -right-3 w-8 h-8 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 shadow-lg z-10"
               >
                 ✕
               </button>
-              <CollaborationRoom 
+              <CollaborationRoom
                 activeSessionId={activeSessionId}
                 connectedUsers={connectedUsers}
                 onJoin={(id) => {
@@ -1034,7 +1189,7 @@ export default function ProblemView() {
                 <History size={16} className="text-primary" />
                 Version Timeline
               </h4>
-              <button 
+              <button
                 onClick={() => setIsTimelineOpen(false)}
                 className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-all"
               >
@@ -1055,7 +1210,7 @@ export default function ProblemView() {
                     {version.trigger.replace('_', ' ')}
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all cursor-pointer group"
-                       onClick={() => setPreviewVersion(version)}>
+                    onClick={() => setPreviewVersion(version)}>
                     <div className="text-[10px] text-slate-500 mb-2 font-mono">
                       {new Date(version.timestamp).toLocaleTimeString()}
                     </div>
@@ -1126,7 +1281,7 @@ export default function ProblemView() {
                   </button>
                 </>
               )}
-              {profile?.solvedProblems.includes(problem.id) && (
+              {profile?.solvedProblems?.includes(problem.id) && (
                 <button
                   onClick={() => setActiveTab("solutions")}
                   className={cn(
@@ -1178,9 +1333,9 @@ export default function ProblemView() {
 
                   <div className="bg-[#0F172A] p-6 rounded-3xl border border-[#334155] shadow-inner font-mono relative">
                     <div className="absolute top-3 right-4 flex gap-2">
-                       <div className="w-2.5 h-2.5 rounded-full bg-red-500/30" />
-                       <div className="w-2.5 h-2.5 rounded-full bg-amber-500/30" />
-                       <div className="w-2.5 h-2.5 rounded-full bg-green-500/30" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/30" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/30" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/30" />
                     </div>
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#475569] mb-4">Constraints_Log</h4>
                     <pre className="text-blue-400 text-xs overflow-x-auto custom-scrollbar">
@@ -1199,15 +1354,20 @@ export default function ProblemView() {
                 </div>
               )}
               {activeTab === "output" && (
-                <ExecutionResults results={results} isLoading={isExecuting} language={language} />
+                <ExecutionResults
+                  results={results}
+                  isLoading={isExecuting}
+                  language={language}
+                  onRetry={() => handleRun()}
+                />
               )}
               {activeTab === "review" && (
                 <CodeReviewPanel review={review} isLoading={isReviewLoading} onReview={handleRequestReview} />
               )}
               {activeTab === "debug" && (
-                <DebuggerPanel 
-                  steps={debugSteps} 
-                  currentStepIndex={currentStepIndex} 
+                <DebuggerPanel
+                  steps={debugSteps}
+                  currentStepIndex={currentStepIndex}
                   onStepChange={setCurrentStepIndex}
                   onReset={() => setCurrentStepIndex(0)}
                   isLoading={isDebugLoading}
@@ -1218,7 +1378,7 @@ export default function ProblemView() {
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold uppercase tracking-wider text-[#9CA3AF]">AI-Generated Solution</h4>
                     {!solutionViewed && (
-                      <button 
+                      <button
                         onClick={handleRequestSolution}
                         className="text-xs bg-[#4F46E5] text-white px-3 py-1.5 rounded-lg hover:bg-[#4338CA] transition-all"
                       >
@@ -1244,13 +1404,13 @@ export default function ProblemView() {
                         Requesting a full solution will mark your submission as "AI Assisted" and heavily reduce your score. Are you sure?
                       </p>
                       <div className="flex items-center justify-center gap-4">
-                        <button 
+                        <button
                           onClick={() => setShowSolutionConfirm(false)}
                           className="px-6 py-2 bg-white dark:bg-[#1E293B] text-gray-700 dark:text-gray-300 rounded-xl font-semibold border border-gray-200 dark:border-[#334155] hover:bg-gray-50 transition-all"
                         >
                           Cancel
                         </button>
-                        <button 
+                        <button
                           onClick={handleRequestSolution}
                           className="px-6 py-2 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20"
                         >
@@ -1264,7 +1424,7 @@ export default function ProblemView() {
                       <p className="text-sm text-[#6B7280] dark:text-[#94A3B8] mb-4">
                         Stuck? You can view the full AI solution, but it will affect your authenticity score.
                       </p>
-                      <button 
+                      <button
                         onClick={() => setShowSolutionConfirm(true)}
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#4F46E5] text-white rounded-xl font-semibold hover:bg-[#4338CA] transition-all"
                       >
@@ -1300,40 +1460,64 @@ export default function ProblemView() {
           </div>
 
           <div className="h-1/3 min-h-[200px]">
-            <HintPanel 
-              hints={hints} 
-              isLoading={isHintLoading} 
-              onGetHint={() => handleGetHint(false)} 
+            <HintPanel
+              hints={hints}
+              isLoading={isHintLoading}
+              onGetHint={(isStuck) => handleGetHint(!!isStuck)}
               onExplainHint={handleExplainHint}
               isExplanationLoading={isExplanationLoading}
               hintLevel={hintLevel}
+              mentorState={mentorState}
+              problemTitle={problem.title}
+              problemDescription={problem.description}
+              code={codes}
+              language={language}
+              lastError={lastError}
+              onBeginnerDebug={() => handleDebug(true)}
             />
           </div>
         </div>
 
         {/* Right: Editor */}
         <div className="lg:col-span-8 min-h-0">
-          <CodeEditor 
-            code={codes} 
-            onChange={handleCodeChange} 
+          <div className="mb-4 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-[#334155] rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#6B7280] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={autosaveEnabled}
+                  onChange={(e) => setAutosaveEnabled(e.target.checked)}
+                  className="w-4 h-4 accent-[#4F46E5]"
+                />
+                Autosave
+              </label>
+              <label
+                className={cn(
+                  "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none",
+                  autosaveEnabled ? "text-[#6B7280]" : "text-[#94A3B8]"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={runOnSaveEnabled}
+                  disabled={!autosaveEnabled}
+                  onChange={(e) => setRunOnSaveEnabled(e.target.checked)}
+                  className="w-4 h-4 accent-[#4F46E5] disabled:opacity-50"
+                />
+                Run on Save
+              </label>
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#6B7280] whitespace-nowrap">
+              {autosaveEnabled ? "Snapshots enabled" : "Snapshots paused"}
+            </div>
+          </div>
+          <CodeEditor
+            code={codes}
+            onChange={handleCodeChange}
             language={language}
             highlightedLine={activeTab === "debug" ? debugSteps[currentStepIndex]?.line : undefined}
           />
         </div>
-      </div>
-    </div>
-  );
-}
-
-function InfoBox({ title, content, icon: Icon }: any) {
-  return (
-    <div className="bg-[#F9FAFB] dark:bg-[#0F172A] p-4 rounded-xl border border-[#E5E7EB] dark:border-[#334155]">
-      <div className="flex items-center gap-2 mb-1 text-[#4F46E5] dark:text-[#818CF8]">
-        <Icon size={14} />
-        <span className="text-[10px] font-bold uppercase tracking-wider">{title}</span>
-      </div>
-      <div className="text-xs text-[#1A1A1A] dark:text-gray-300 leading-relaxed prose prose-xs dark:prose-invert max-w-none">
-        <MarkdownRenderer content={content} />
       </div>
     </div>
   );

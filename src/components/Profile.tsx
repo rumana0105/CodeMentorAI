@@ -41,6 +41,7 @@ export default function Profile() {
   const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState<"overview" | "settings">("overview");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -67,6 +68,7 @@ export default function Profile() {
 
   const handleDownloadReport = async () => {
     if (!user) return;
+    setDownloadError(null);
     setIsDownloading(true);
     try {
       const response = await fetch(`/api/report/download?userId=${user.uid}`);
@@ -83,6 +85,7 @@ export default function Profile() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error(error);
+      setDownloadError(error instanceof Error ? error.message : "Failed to download");
     } finally {
       setIsDownloading(false);
     }
@@ -90,17 +93,21 @@ export default function Profile() {
 
   if (!profile) return null;
 
+  const solvedProblems = profile.solvedProblems || [];
+  const attempts = profile.attempts || {};
+  const badges = profile.badges || [];
+
   const solvedData = [
-    { name: "Easy", value: profile.solvedProblems.filter(id => INITIAL_PROBLEMS.find(p => p.id === id)?.difficulty === "Easy").length, color: "#10B981" },
-    { name: "Medium", value: profile.solvedProblems.filter(id => INITIAL_PROBLEMS.find(p => p.id === id)?.difficulty === "Medium").length, color: "#F59E0B" },
-    { name: "Hard", value: profile.solvedProblems.filter(id => INITIAL_PROBLEMS.find(p => p.id === id)?.difficulty === "Hard").length, color: "#EF4444" },
+    { name: "Easy", value: solvedProblems.filter(id => INITIAL_PROBLEMS.find(p => p.id === id)?.difficulty === "Easy").length, color: "#10B981" },
+    { name: "Medium", value: solvedProblems.filter(id => INITIAL_PROBLEMS.find(p => p.id === id)?.difficulty === "Medium").length, color: "#F59E0B" },
+    { name: "Hard", value: solvedProblems.filter(id => INITIAL_PROBLEMS.find(p => p.id === id)?.difficulty === "Hard").length, color: "#EF4444" },
   ];
 
-  const totalSolved = profile.solvedProblems.length;
+  const totalSolved = solvedProblems.length;
   const accuracy = profile.accuracy || 0;
 
   const topicCount = INITIAL_PROBLEMS.reduce((acc, p) => {
-    if (profile.solvedProblems.includes(p.id)) {
+    if (solvedProblems.includes(p.id)) {
       acc[p.category] = (acc[p.category] || 0) + 1;
     }
     return acc;
@@ -108,8 +115,8 @@ export default function Profile() {
 
   const strongestTopic = Object.entries(topicCount).sort((a,b) => b[1] - a[1])[0]?.[0] || "Basics";
   
-  const failedIDs = Object.entries(profile.attempts)
-    .filter(([id]) => !profile.solvedProblems.includes(id))
+  const failedIDs = Object.entries(attempts)
+    .filter(([id]) => !solvedProblems.includes(id))
     .sort((a,b) => b[1] - a[1]);
     
   const weakTopic = failedIDs.length > 0 
@@ -117,7 +124,7 @@ export default function Profile() {
     : "Dynamic Programming";
 
   const recommendations = INITIAL_PROBLEMS
-    .filter(p => p.category === weakTopic && !profile.solvedProblems.includes(p.id))
+    .filter(p => p.category === weakTopic && !solvedProblems.includes(p.id))
     .slice(0, 2);
 
   return (
@@ -161,15 +168,15 @@ export default function Profile() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              {profile.badges.slice(0, 3).map((badge) => (
+              {badges.slice(0, 3).map((badge) => (
                 <div key={badge.id} className="flex items-center gap-2 bg-[#EEF2FF] dark:bg-[#312E81] text-[#4F46E5] dark:text-[#818CF8] px-3 py-1.5 rounded-xl text-xs font-bold border border-[#C7D2FE] dark:border-[#4338CA]">
                   <span>{badge.icon}</span>
                   {badge.name}
                 </div>
               ))}
-              {profile.badges.length > 3 && (
+              {badges.length > 3 && (
                 <div className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] ml-2">
-                  +{profile.badges.length - 3} more
+                  +{badges.length - 3} more
                 </div>
               )}
             </div>
@@ -213,6 +220,11 @@ export default function Profile() {
               </button>
             )}
           </div>
+          {downloadError && (
+            <div className="mt-2 text-xs text-red-500 font-bold">
+              {downloadError}
+            </div>
+          )}
         </div>
       </div>
 
@@ -239,7 +251,7 @@ export default function Profile() {
                 </div>
               </div>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
                   <LineChart data={profile.aiUsageTrends || []}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                     <XAxis 
@@ -286,7 +298,7 @@ export default function Profile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-8">
                 <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
                     <PieChart>
                       <Pie
                         data={solvedData}
@@ -524,7 +536,7 @@ export default function Profile() {
                 <h3 className="font-bold text-[#1A1A1A] dark:text-white">Recent Achievements</h3>
               </div>
               <div className="space-y-4">
-                {profile.badges.slice(-4).reverse().map((badge) => (
+                {badges.slice(-4).reverse().map((badge) => (
                   <div key={badge.id} className="flex items-center gap-4 p-3 hover:bg-[#F9FAFB] dark:hover:bg-[#334155] rounded-2xl transition-colors cursor-pointer group border border-transparent hover:border-[#E5E7EB] dark:hover:border-[#334155]">
                     <div className="w-12 h-12 bg-[#F3F4F6] dark:bg-[#1E293B] rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                       {badge.icon}
@@ -535,7 +547,7 @@ export default function Profile() {
                     </div>
                   </div>
                 ))}
-                {profile.badges.length === 0 && (
+                {badges.length === 0 && (
                   <p className="text-center text-xs text-[#6B7280] py-4">Solve problems to earn badges!</p>
                 )}
               </div>

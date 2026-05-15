@@ -19,6 +19,7 @@ if (config) {
 }
 
 const app = initializeApp(firebaseConfig);
+console.log("Firebase Project ID:", firebaseConfig.projectId);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
