@@ -190,10 +190,13 @@ export async function createUserProfile(userId: string, displayName: string, pho
   };
 
   try {
+    console.log("UID:", auth.currentUser?.uid);
+    console.log("Payload:", initialProgress);
     // Exact code requested by user:
     await setDoc(doc(db, "users", user.uid), {
       name: user.displayName,
       email: user.email,
+      photoURL: user.photoURL,
       createdAt: serverTimestamp()
     });
     // Setting the remaining initial progress fields separately to prevent app crashes
@@ -234,12 +237,12 @@ export async function saveProgress(
     problemId: problemId,
     code: metadata?.code || "",
     language: metadata?.language || "python",
-    status: passed ? "passed" : "failed",
+    result: passed ? "passed" : "failed",
     createdAt: serverTimestamp()
   };
 
-  console.log("Submitting with UID:", currentUser.uid);
-  console.log("Submitting data:", submissionData);
+  console.log("UID:", auth.currentUser?.uid);
+  console.log("Payload:", submissionData);
 
   try {
     await addDoc(collection(db, "submissions"), submissionData);

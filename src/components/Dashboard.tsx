@@ -347,7 +347,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
                 <AreaChart data={progress?.aiUsageTrends || []}>
                   <defs>
                     <linearGradient id="colorHints" x1="0" y1="0" x2="0" y2="1">
@@ -416,7 +416,7 @@ export default function Dashboard() {
             </h3>
             {topicData.length > 0 ? (
               <div className="h-80 w-full -ml-4">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
                   <BarChart data={topicData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.1} />
                     <XAxis type="number" hide />
@@ -444,7 +444,7 @@ export default function Dashboard() {
               INTELLIGENCE_QUOTIENT_SPLIT
             </h3>
             <div className="h-56 w-full flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
                 <PieChart>
                   <Pie
                     data={aiUsageData}

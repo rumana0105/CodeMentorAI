@@ -251,7 +251,7 @@ export default function Profile() {
                 </div>
               </div>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
                   <LineChart data={profile.aiUsageTrends || []}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                     <XAxis 
@@ -298,7 +298,7 @@ export default function Profile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-8">
                 <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={undefined}>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
                     <PieChart>
                       <Pie
                         data={solvedData}
