@@ -54,10 +54,11 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   
   if (errInfo.error.toLowerCase().includes("permission") || errInfo.error.toLowerCase().includes("missing")) {
-    throw new Error("Permission denied. Please login again.");
+    console.error("Permission denied. Ensure your rules are deployed and you are logged in.");
+    return;
   }
   
-  throw new Error(JSON.stringify(errInfo));
+  console.error("Firestore operation failed:", errInfo.error);
 }
 
 const FORUM_COLLECTION = "community";
@@ -107,12 +108,12 @@ export async function addReply(postId: string, reply: ForumReply) {
 }
 
 export async function getLeaderboard() {
-  const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(10));
+  const q = query(collection(db, "leaderboards"), orderBy("xp", "desc"), limit(10));
   try {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => doc.data());
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, "users");
+    handleFirestoreError(error, OperationType.LIST, "leaderboards");
     return [];
   }
 }

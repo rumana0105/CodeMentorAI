@@ -34,7 +34,7 @@ import {
 import { cn } from "../lib/utils";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { INITIAL_PROBLEMS } from "../constants";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 
 export default function Profile() {
@@ -1065,6 +1065,91 @@ function GitHubCommits({ userId }: { userId: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SubmissionHistory({ userId }: { userId: string }) {
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const q = query(
+          collection(db, "submissions"),
+          where("userId", "==", userId),
+          orderBy("timestamp", "desc")
+        );
+        const snap = await getDocs(q);
+        setSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        console.error("Failed to fetch history", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [userId]);
+
+  if (loading) return (
+    <div className="flex justify-center p-12">
+      <Loader2 className="animate-spin text-[#4F46E5]" size={32} />
+    </div>
+  );
+
+  if (submissions.length === 0) return (
+    <div className="bg-white dark:bg-[#1E293B] rounded-[2rem] border border-[#E5E7EB] dark:border-[#334155] p-12 text-center text-slate-500">
+      No submissions found. Start coding!
+    </div>
+  );
+
+  return (
+    <div className="bg-white dark:bg-[#1E293B] rounded-[2rem] border border-[#E5E7EB] dark:border-[#334155] p-8 shadow-sm">
+      <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-slate-800 dark:text-white">
+        <Activity className="text-indigo-500" /> Granular Submission History
+      </h3>
+      <div className="space-y-4">
+        {submissions.map(sub => (
+          <div key={sub.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <span className={cn(
+                  "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg",
+                  sub.status === "accepted" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                )}>
+                  {sub.status === "accepted" ? "Accepted" : "Failed"}
+                </span>
+                <span className="text-sm font-bold text-slate-800 dark:text-white">
+                  Problem {sub.problemId}
+                </span>
+              </div>
+              <div className="text-xs text-slate-500 flex gap-4">
+                <span>{new Date(sub.timestamp).toLocaleString()}</span>
+                <span>• {sub.language}</span>
+                {sub.timeSpentMs && <span>• {Math.round(sub.timeSpentMs / 60000)} mins</span>}
+              </div>
+            </div>
+            
+            <div className="flex gap-4 items-center">
+              {sub.aiDependencyScore !== undefined && (
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">AI Dependency</div>
+                  <div className={cn("text-sm font-black", sub.aiDependencyScore < 30 ? "text-green-500" : sub.aiDependencyScore > 70 ? "text-red-500" : "text-yellow-500")}>
+                    {Math.round(sub.aiDependencyScore)}%
+                  </div>
+                </div>
+              )}
+              {sub.hintsTaken !== undefined && (
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Hints</div>
+                  <div className="text-sm font-black text-slate-700 dark:text-slate-300">{sub.hintsTaken}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

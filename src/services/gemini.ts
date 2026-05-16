@@ -420,3 +420,147 @@ export async function getRecommendedProblems(
       }));
   }
 }
+
+export async function generateRoadmap(
+  language: string,
+  domain: string,
+  level: string,
+  goal: string
+): Promise<any> {
+  const prompt = `
+    You are an expert tech lead. Generate a comprehensive, 4-phase learning roadmap for:
+    Language: ${language}
+    Domain: ${domain}
+    Current Level: ${level}
+    Career Goal: ${goal}
+    
+    Each phase should have 3-5 nodes. A node can be a "concept", "practice", or "project".
+    Return ONLY JSON matching this exact structure:
+    {
+      "phases": [
+        {
+          "title": "Phase 1: Foundation",
+          "nodes": [
+            {
+              "title": "Variables & Data Types",
+              "description": "Learn the basics",
+              "type": "concept",
+              "dependencies": []
+            }
+          ]
+        }
+      ]
+    }
+  `;
+
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (err) {
+    console.error("Roadmap Generation Error:", err);
+    throw err;
+  }
+}
+
+export async function generateDynamicQuestion(
+  topic: string,
+  difficulty: "Easy" | "Medium" | "Hard",
+  language: string,
+  weakConcepts?: string[]
+): Promise<any> {
+  const prompt = `
+    Generate a unique, engaging coding problem for ${topic} at ${difficulty} difficulty in ${language}.
+    ${weakConcepts && weakConcepts.length > 0 ? `Focus specifically on improving these weak concepts: ${weakConcepts.join(', ')}` : ''}
+    
+    The problem should have a real-world scenario.
+    Include 2 public test cases and 3 hidden test cases.
+    Return ONLY JSON matching this structure:
+    {
+      "title": "Problem Title",
+      "description": "Markdown formatted description",
+      "category": "${topic}",
+      "difficulty": "${difficulty}",
+      "inputFormat": "...",
+      "outputFormat": "...",
+      "constraints": "...",
+      "starterCode": { "${language}": "def solve():\\n  pass" },
+      "testCases": [ { "input": "...", "expectedOutput": "..." } ],
+      "hiddenTestCases": [ { "input": "...", "expectedOutput": "...", "hidden": true } ]
+    }
+  `;
+
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+    let rawText = response.text || "{}";
+    rawText = rawText.trim();
+    if (rawText.startsWith("```json")) {
+      rawText = rawText.substring(7);
+    } else if (rawText.startsWith("```")) {
+      rawText = rawText.substring(3);
+    }
+    if (rawText.endsWith("```")) {
+      rawText = rawText.substring(0, rawText.length - 3);
+    }
+    return JSON.parse(rawText.trim());
+  } catch (err) {
+    console.error("Dynamic Question Generation Error:", err);
+    throw err;
+  }
+}
+
+export async function suggestNextAction(
+  userStats: any
+): Promise<{ suggestedNodeId?: string; message: string; type: "continue" | "revision" }> {
+  const prompt = `
+    Analyze user stats and suggest next action.
+    Stats: ${JSON.stringify(userStats)}
+    
+    If they are failing a lot, suggest "revision". If doing well, "continue".
+    Return JSON: { "type": "continue" | "revision", "message": "Short encouraging message" }
+  `;
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (err) {
+    return { type: "continue", message: "Keep going! Try the next topic." };
+  }
+}
+
+export async function generateAIDiscussion(): Promise<any> {
+  const prompt = `
+    Generate a realistic, insightful coding forum discussion post.
+    Topic: trending tech, algorithms, or programming languages.
+    Return ONLY JSON: { "title": "...", "content": "...", "category": "Problems" | "Career" | "Showcase" | "General" }
+  `;
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (err) {
+    console.error("AI Discussion Generation Error:", err);
+    throw err;
+  }
+}

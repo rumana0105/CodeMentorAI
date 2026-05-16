@@ -8,3 +8,4 @@ coverage/
 
 gen-lang-client-*.json
 firebase-admin-key*.json
+*-firebase-adminsdk-*.json

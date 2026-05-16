@@ -6,7 +6,7 @@ import CodeEditor from "./CodeEditor";
 import HintPanel from "./HintPanel";
 import ExecutionResults from "./ExecutionResults";
 import CodeReviewPanel from "./CodeReviewPanel";
-import { generateHint, reviewCode, explainHintConcept, generateFullSolution } from "../services/gemini";
+import { generateHint, reviewCode, explainHintConcept, generateFullSolution, generateDynamicQuestion } from "../services/gemini";
 import { saveProgress } from "../services/db";
 import { useAuth } from "./AuthProvider";
 import { analyzeBehavior, generateDetailedFeedback } from "../services/gemini";
@@ -61,6 +61,22 @@ export default function ProblemView() {
 
     const fetchProblem = async () => {
       setIsLoadingProblem(true);
+      if (id === "dynamic") {
+        const params = new URLSearchParams(window.location.search);
+        const topic = params.get("topic") || "General";
+        const difficulty = (params.get("difficulty") || "Medium") as any;
+        const lang = params.get("language") || "python";
+        
+        try {
+          const generated = await generateDynamicQuestion(topic, difficulty, lang);
+          setProblem({ ...generated, id: `dyn_${Date.now()}` });
+        } catch (error) {
+          console.error("Failed to generate dynamic problem", error);
+        } finally {
+          setIsLoadingProblem(false);
+        }
+        return;
+      }
       try {
         const docRef = doc(db, "problems", id);
         const docSnap = await getDoc(docRef);
@@ -567,6 +583,8 @@ export default function ProblemView() {
         code: codes,
         language,
         problemId: problem.id,
+        testCases: problem.testCases,
+        hiddenTestCases: problem.hiddenTestCases,
         userId: user?.uid,
         problemTitle: problem.title,
         aiUsage: behaviorAnalysis.dependencyScore,
@@ -656,6 +674,9 @@ export default function ProblemView() {
           message: "Congratulations! You solved the problem and passed all test cases (including hidden ones).",
           type: 'success'
         });
+        if (!interviewMode) {
+          handleRequestReview();
+        }
       } else {
         setSubmissionFeedback({
           message: "Some test cases failed. Check the output and try again.",
@@ -1300,16 +1321,34 @@ export default function ProblemView() {
                   {/* Feedback Message */}
                   {submissionFeedback && (
                     <div className={cn(
-                      "p-5 rounded-2xl border mb-6 flex items-center justify-between animate-in slide-in-from-top duration-500",
+                      "p-5 rounded-2xl border mb-6 flex items-start justify-between animate-in slide-in-from-top duration-500",
                       submissionFeedback.type === 'success' ? "bg-green-500/10 text-green-500 border-green-500/20 glow-success" : "bg-red-500/10 text-red-500 border-red-500/20 glow-error"
                     )}>
-                      <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-lg", submissionFeedback.type === 'success' ? "bg-green-500/20" : "bg-red-500/20")}>
-                          {submissionFeedback.type === 'success' ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("p-2 rounded-lg", submissionFeedback.type === 'success' ? "bg-green-500/20" : "bg-red-500/20")}>
+                            {submissionFeedback.type === 'success' ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
+                          </div>
+                          <p className="text-sm font-bold tracking-tight">{submissionFeedback.message}</p>
                         </div>
-                        <p className="text-sm font-bold tracking-tight">{submissionFeedback.message}</p>
+                        {submissionFeedback.type === 'success' && (
+                          <div className="flex gap-3 pl-12">
+                            <button
+                              onClick={() => setActiveTab('review')}
+                              className="text-xs bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600 transition-all font-bold flex items-center gap-2"
+                            >
+                              <Brain size={14} /> View AI Review
+                            </button>
+                            <button
+                              onClick={() => navigate('/dashboard')}
+                              className="text-xs bg-white text-green-600 border border-green-200 px-4 py-2 rounded-xl hover:bg-green-50 transition-all font-bold flex items-center gap-2"
+                            >
+                              Continue Roadmap <ChevronRight size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <button onClick={() => setSubmissionFeedback(null)} className="p-1 hover:bg-black/5 rounded-full transition-all">✕</button>
+                      <button onClick={() => setSubmissionFeedback(null)} className="p-1 hover:bg-black/5 rounded-full transition-all mt-1">✕</button>
                     </div>
                   )}
 

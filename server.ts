@@ -24,7 +24,7 @@ const firebaseConfig = JSON.parse(fs_sync.readFileSync('./firebase-applet-config
 const app = admin.initializeApp({
   projectId: firebaseConfig.projectId,
 });
-const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const db = getFirestore(app);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -187,15 +187,20 @@ async function startServer() {
         console.warn("Firestore error while fetching problem, falling back to local constants.");
       }
 
-      // Fallback to local INITIAL_PROBLEMS
+      // Fallback to local INITIAL_PROBLEMS or provided test cases
       if (!problemData) {
         const localProblem = INITIAL_PROBLEMS.find(p => p.id === problemId);
-        if (!localProblem) {
+        if (localProblem) {
+          problemData = localProblem;
+          publicTestCases = localProblem.testCases || [];
+          hiddenTestCases = []; // No hidden cases locally
+        } else if (req.body.testCases || req.body.hiddenTestCases) {
+          problemData = { id: problemId, title: req.body.problemTitle || "Dynamic Problem" };
+          publicTestCases = req.body.testCases || [];
+          hiddenTestCases = req.body.hiddenTestCases || [];
+        } else {
           return res.status(404).json({ success: false, message: "Problem not found." });
         }
-        problemData = localProblem;
-        publicTestCases = localProblem.testCases || [];
-        hiddenTestCases = []; // No hidden cases locally
       }
 
       const allTestCases = [...publicTestCases, ...hiddenTestCases];
@@ -217,10 +222,18 @@ async function startServer() {
       if (allPassed && req.body.userId && !req.body.interviewMode) {
         // Trigger GitHub Sync in background
         const problemTitle = problemData?.title || "Solution";
+        
+        // Structured folder: Language/Category
+        const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+        const langFolder = capitalize(language);
+        const categoryFolder = problemData?.category ? problemData.category.replace(/\s+/g, '') : "General";
+        const folderPath = `${langFolder}/${categoryFolder}`;
+
         pushToGitHub(req.body.userId, problemTitle, language, code, {
           aiUsage: req.body.aiUsage || 0,
           timeSpent: req.body.timeSpent || "N/A",
-          branch: req.body.branch || "main"
+          branch: req.body.branch || "main",
+          folderPath
         }).catch(err => console.error("GitHub Sync Error:", err));
       }
 
@@ -817,7 +830,11 @@ async function startServer() {
     if (!token) return;
 
     const repoName = "codementorai-solutions";
-    const filename = `problems/${problemTitle.toLowerCase().replace(/\s+/g, '-')}.${getFileExtension(language)}`;
+    
+    // Support structured folder paths like Java/Basics/Loops
+    const folderPath = stats.folderPath || `problems`;
+    const cleanTitle = problemTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const filename = `${folderPath}/${cleanTitle}.${getFileExtension(language)}`;
     const branch = stats.branch || "main";
 
     const headers = { Authorization: `token ${token}` };

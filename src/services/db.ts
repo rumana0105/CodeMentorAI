@@ -1,6 +1,6 @@
 import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, addDoc, query, limit, getDocs, collection, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import { UserProgress } from "../types";
+import { UserProgress, Roadmap } from "../types";
 
 enum OperationType {
   CREATE = 'create',
@@ -54,10 +54,11 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   
   if (errInfo.error.toLowerCase().includes("permission") || errInfo.error.toLowerCase().includes("missing")) {
-    throw new Error("Permission denied. Please login again");
+    console.error("Permission denied. Ensure your rules are deployed and you are logged in.");
+    return;
   }
   
-  throw new Error(JSON.stringify(errInfo));
+  console.error("Firestore operation failed:", errInfo.error);
 }
 
 export async function getUserProgress(userId: string): Promise<UserProgress | null> {
@@ -201,6 +202,21 @@ export async function createUserProfile(userId: string, displayName: string, pho
     });
     // Setting the remaining initial progress fields separately to prevent app crashes
     await setDoc(docRef, initialProgress, { merge: true });
+    
+    // Create leaderboards entry
+    try {
+      await setDoc(doc(db, "leaderboards", user.uid), {
+        userId: user.uid,
+        displayName: displayName || user.displayName || "Anonymous",
+        photoURL: photoURL || user.photoURL || "",
+        xp: 0,
+        level: 1,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (lbError) {
+      console.error("Leaderboard creation failed:", lbError);
+    }
+    
     return initialProgress;
   } catch (error: any) {
     // 5. ERROR HANDLING IMPROVEMENT
@@ -222,6 +238,7 @@ export async function saveProgress(
     timeBeforeFirstHintMs?: number;
     codeEdits?: number;
     code?: string;
+    aiReview?: any;
   }
 ) {
   const currentUser = auth.currentUser;
@@ -238,7 +255,9 @@ export async function saveProgress(
     code: metadata?.code || "",
     language: metadata?.language || "python",
     result: passed ? "passed" : "failed",
-    createdAt: serverTimestamp()
+    runtime: 0,
+    memory: 0,
+    timestamp: new Date().toISOString()
   };
 
   console.log("UID:", auth.currentUser?.uid);
@@ -340,8 +359,9 @@ export async function saveProgress(
       totalCodeEdits: increment(codeEdits)
     };
     
+    let isFirstTime = false;
     if (passed) {
-      const isFirstTime = !data.solvedProblems.includes(problemId);
+      isFirstTime = !data.solvedProblems.includes(problemId);
       if (isFirstTime) {
         updates.solvedProblems = arrayUnion(problemId);
         updates.xp = increment(scoreImpact);
@@ -402,6 +422,18 @@ export async function saveProgress(
 
     try {
       await updateDoc(docRef, updates);
+      
+      // Update Leaderboard if XP changed
+      if (passed && isFirstTime) {
+        try {
+          await setDoc(doc(db, "leaderboards", userId), {
+            xp: increment(scoreImpact),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (lbErr) {
+          console.error("Leaderboard update failed", lbErr);
+        }
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
     }
@@ -449,6 +481,48 @@ export async function seedInitialContests() {
     } catch (error) {
       console.error("Failed to seed contest:", c.title, error);
     }
+  }
+}
+
+export async function saveRoadmap(userId: string, roadmap: Roadmap) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.error("Cannot save roadmap: no authenticated user.");
+    return;
+  }
+  try {
+    const docRef = doc(db, "roadmaps", roadmap.id);
+    await setDoc(docRef, {
+      roadmapId: roadmap.id,
+      userId: currentUser.uid,
+      title: roadmap.title || "AI Learning Roadmap",
+      language: roadmap.language || "general",
+      level: roadmap.level || "beginner",
+      generatedBy: "AI",
+      phases: roadmap.phases || [],
+      createdAt: new Date().toISOString()
+    });
+    
+    // update user progress to track current roadmap
+    const userRef = doc(db, "users", currentUser.uid);
+    await updateDoc(userRef, { currentRoadmapId: roadmap.id });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `roadmaps/${roadmap.id}`);
+  }
+}
+
+export async function loadRoadmap(userId: string, roadmapId: string): Promise<Roadmap | null> {
+  try {
+    const docRef = doc(db, "roadmaps", roadmapId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      // Security rule ensures only owner can read
+      return docSnap.data() as Roadmap;
+    }
+    return null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, `roadmaps/${roadmapId}`);
+    return null;
   }
 }
 

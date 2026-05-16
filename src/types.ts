@@ -73,6 +73,11 @@ export interface UserProgress {
     totalCommits: number;
     lastCommitAt?: string;
   };
+  currentRoadmapId?: string;
+  learningProfile?: {
+    weakConcepts: string[];
+    strongConcepts: string[];
+  };
 }
 
 export interface Contest {
@@ -202,4 +207,41 @@ export interface BattleMatch {
   isPrivate: boolean;
   matchCode?: string;
   createdAt: string;
+}
+
+export interface RoadmapNode {
+  id: string;
+  title: string;
+  description: string;
+  type: "concept" | "practice" | "project" | "quiz";
+  status: "locked" | "unlocked" | "completed";
+  problemId?: string;
+  dependencies?: string[];
+}
+
+export interface RoadmapPhase {
+  id: string;
+  title: string;
+  nodes: RoadmapNode[];
+}
+
+export interface Roadmap {
+  id: string;
+  userId: string;
+  language: string;
+  domain: string;
+  level: string;
+  goal: string;
+  phases: RoadmapPhase[];
+  createdAt: string;
+  updatedAt: string;
+  title?: string;
+  generatedBy?: string;
+  activeNodeId?: string;
+}
+
+export interface AIGeneratedQuestion extends Problem {
+  generatedForUser: string;
+  isDynamic: boolean;
+  baseTopic: string;
 }

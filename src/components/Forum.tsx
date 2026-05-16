@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { subscribeToForum, createPost, toggleLike, addReply } from "../services/forum";
 import { useAuth } from "./AuthProvider";
 import { ForumPost } from "../types";
-import { MessageSquare, Heart, Send, User, Search, Plus, Users, ChevronRight, Bot } from "lucide-react";
+import { MessageSquare, Heart, Send, User, Search, Plus, Users, ChevronRight, Bot, Sparkles } from "lucide-react";
+import { generateAIDiscussion } from "../services/gemini";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -16,8 +17,30 @@ export default function Forum() {
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const categories = ["All", "General", "Problems", "Career", "Showcase", "Off-topic"];
+
+  const handleGenerateAIDiscussion = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const generated = await generateAIDiscussion();
+      await createPost({
+        userId: "ai_bot",
+        authorName: "CodeMentorAI Bot",
+        authorPhoto: "https://api.dicebear.com/7.x/bottts/svg?seed=CodeMentorAI",
+        title: generated.title,
+        content: generated.content,
+        category: generated.category || "General",
+        tags: [],
+        createdAt: new Date().toISOString()
+      } as any);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeToForum((newPosts) => {
@@ -105,7 +128,14 @@ export default function Forum() {
                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">AI Insights</p>
                 <h4 className="text-lg font-bold leading-tight uppercase">Analyze trending topics?</h4>
                 <p className="text-xs text-slate-400 font-serif italic">Our neural network flags "Dynamic Programming" as this week's most discussed vector.</p>
-                <button className="text-[10px] font-black text-white uppercase tracking-widest border-b border-white/20 pb-1 hover:border-primary transition-all">Enable Analytics</button>
+                <button 
+                  onClick={handleGenerateAIDiscussion}
+                  disabled={isGeneratingAI}
+                  className="flex items-center gap-2 text-[10px] font-black text-white uppercase tracking-widest border-b border-white/20 pb-1 hover:border-primary transition-all disabled:opacity-50"
+                >
+                  <Sparkles size={12} />
+                  {isGeneratingAI ? "Generating..." : "Generate AI Discussion"}
+                </button>
              </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { INITIAL_PROBLEMS } from "../constants";
 import ProblemCard from "./ProblemCard";
+import RoadmapView from "./RoadmapView";
 import { Trophy, Target, Zap, TrendingUp, Award, Brain, Activity, Layers, Search, Cpu, ArrowRight, Clock, BarChart3, AlertTriangle, Monitor, Code2, Terminal, Network, ShieldCheck, LayoutDashboard, Github, FileDown, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from "recharts";
 import { cn } from "../lib/utils";
@@ -205,6 +206,11 @@ export default function Dashboard() {
         />
       </section>
 
+      {/* AI Roadmap Integration */}
+      <section className="pt-8">
+        <RoadmapView currentRoadmapId={progress?.currentRoadmapId} />
+      </section>
+
       {/* AI Recommendations HERO - Ultra Prominent */}
       {(recommendations.length > 0 || isRecLoading) && (
         <section className="bg-slate-900 rounded-[3.5rem] p-12 relative overflow-hidden shadow-2xl shadow-indigo-500/20 text-white">
@@ -347,7 +353,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
+              <ResponsiveContainer width="100%" height={320}>
                 <AreaChart data={progress?.aiUsageTrends || []}>
                   <defs>
                     <linearGradient id="colorHints" x1="0" y1="0" x2="0" y2="1">

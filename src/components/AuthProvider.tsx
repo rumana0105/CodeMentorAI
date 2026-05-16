@@ -46,14 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (authUser) {
-        // STEP 5: VERIFY COLLECTION ACCESS (Test manual write)
-        try {
-          await setDoc(doc(db, "test", "testDoc"), { ok: true });
-          console.log("SUCCESS: Manual test write to 'test' collection succeeded.");
-        } catch (testError) {
-          console.error("FAILURE: Manual test write failed. Firestore might not be configured correctly.", testError);
-        }
-
         // First check if profile exists, if not create it
         let initialProfile = await getUserProgress(authUser.uid);
         if (!initialProfile) {
