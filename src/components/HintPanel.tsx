@@ -82,7 +82,7 @@ export default function HintPanel({
   return (
     <div className="bg-white dark:bg-[#0F172A] rounded-3xl border border-[#E5E7EB] dark:border-[#334155] shadow-xl flex flex-col h-full overflow-hidden transition-all">
       <div className="px-6 py-4 border-b border-[#E5E7EB] dark:border-[#334155] flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md">
-        <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
+        <div className="flex items-center gap-2 text-primary font-black tracking-wide font-medium text-sm">
           <Lightbulb size={16} className="text-yellow-400" />
           Recursive Mentor
         </div>
@@ -98,7 +98,7 @@ export default function HintPanel({
                 />
               ))}
            </div>
-           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+           <span className="text-sm font-black text-slate-400 tracking-wide font-medium">
               Lvl {Math.min(hintLevel, 3)}/3
            </span>
         </div>
@@ -114,10 +114,10 @@ export default function HintPanel({
               {mentorState === "struggling" || mentorState === "stuck" ? <AlertCircle size={40} /> : <HelpCircle size={40} />}
             </div>
             <div className="space-y-2">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-xs font-black tracking-wide font-medium text-slate-500">
                 {mentorState === "idle" ? "Idle" : mentorState === "observing" ? "Observing" : mentorState === "struggling" ? "Struggling" : "Stuck"}
               </p>
-              <p className="text-[10px] font-medium text-slate-400 max-w-[240px] leading-relaxed italic font-serif">
+              <p className="text-sm font-medium text-slate-400 max-w-[240px] leading-relaxed italic font-serif">
                 {mentorState === "idle" && "Run your first test and I will watch for where things diverge."}
                 {mentorState === "observing" && "I am watching your results. If tests fail, I will suggest the smallest next step."}
                 {mentorState === "struggling" && "A mismatch is detected. Want a hint that nudges you toward the right direction?"}
@@ -128,7 +128,7 @@ export default function HintPanel({
               {mentorState === "struggling" ? (
                 <button
                   onClick={() => onGetHint(false)}
-                  className="bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+                  className="bg-primary text-white px-8 py-4 rounded-2xl font-black tracking-wide font-medium text-sm hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
                 >
                   Suggest Hint <ChevronRight size={14} />
                 </button>
@@ -138,13 +138,13 @@ export default function HintPanel({
                   <button
                     onClick={() => onBeginnerDebug?.()}
                     disabled={!onBeginnerDebug}
-                    className="bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-primary text-white px-8 py-4 rounded-2xl font-black tracking-wide font-medium text-sm hover:bg-primary-hover shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Step-by-step Help <ChevronRight size={14} />
                   </button>
                   <button
                     onClick={() => onGetHint(true)}
-                    className="bg-white/10 text-primary px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/20 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+                    className="bg-white/10 text-primary px-8 py-4 rounded-2xl font-black tracking-wide font-medium text-sm hover:bg-white/20 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
                   >
                     Deeper Hint <ChevronRight size={14} />
                   </button>
@@ -153,7 +153,7 @@ export default function HintPanel({
               {mentorState === "idle" || mentorState === "observing" ? (
                 <button
                   onClick={() => onGetHint(false)}
-                  className="bg-white/10 text-primary px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-white/20 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+                  className="bg-white/10 text-primary px-8 py-4 rounded-2xl font-black tracking-wide font-medium text-sm hover:bg-white/20 shadow-xl shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
                 >
                   Get a Gentle Hint <ChevronRight size={14} />
                 </button>
@@ -163,7 +163,7 @@ export default function HintPanel({
             {/* Ask Mentor */}
             <div className="w-full max-w-md">
               <div className="bg-slate-50 dark:bg-black/20 p-4 rounded-3xl border border-slate-100 dark:border-slate-800/60 text-left">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
+                <p className="text-sm font-black tracking-wide font-medium text-slate-500 mb-2 flex items-center gap-2">
                   <Brain size={12} className="text-[#4F46E5]" />
                   Ask Mentor
                 </p>
@@ -179,7 +179,7 @@ export default function HintPanel({
                   <button
                     onClick={handleAskMentor}
                     disabled={isAsking || !askInput.trim()}
-                    className="px-4 py-3 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-[10px] hover:bg-primary-hover disabled:opacity-50 transition-all"
+                    className="px-4 py-3 rounded-2xl bg-primary text-white font-black tracking-wide font-medium text-sm hover:bg-primary-hover disabled:opacity-50 transition-all"
                   >
                     {isAsking ? "Asking..." : "Send"}
                   </button>
@@ -218,10 +218,10 @@ export default function HintPanel({
               )}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-white/50 dark:bg-black/20 flex items-center justify-center text-[10px] font-black">
+                    <div className="w-6 h-6 rounded-lg bg-white/50 dark:bg-black/20 flex items-center justify-center text-sm font-black">
                       {hint.level || index + 1}
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest opacity-60 flex items-center gap-1.5">
+                    <span className="text-sm font-black tracking-wide font-medium opacity-60 flex items-center gap-1.5">
                       {levelIcons[Math.min((hint.level || index + 1) - 1, 2)]}
                       Level: {levelLabels[Math.min((hint.level || index + 1) - 1, 2)]}
                     </span>
@@ -230,7 +230,7 @@ export default function HintPanel({
                     <button
                       onClick={() => onExplainHint(index)}
                       disabled={isExplanationLoading === index}
-                      className="text-[9px] font-black uppercase tracking-widest bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded-xl hover:bg-white/80 dark:hover:bg-black/40 transition-all disabled:opacity-50"
+                      className="text-sm font-black tracking-wide font-medium bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded-xl hover:bg-white/80 dark:hover:bg-black/40 transition-all disabled:opacity-50"
                     >
                       {isExplanationLoading === index ? "Analyzing..." : "Deep_Dive"}
                     </button>
@@ -240,7 +240,7 @@ export default function HintPanel({
                 <div className="flex gap-4">
                   <div className="flex-1 text-xs leading-relaxed font-medium prose prose-xs max-w-none dark:prose-invert">
                     {hint.isStuckTrigger && (
-                      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter mb-2 text-red-600 dark:text-red-400 animate-pulse">
+                      <div className="flex items-center gap-1.5 text-sm font-black  tracking-tighter mb-2 text-red-600 dark:text-red-400 animate-pulse">
                         <AlertCircle size={10} />
                         Automated Intervention
                       </div>
@@ -253,9 +253,9 @@ export default function HintPanel({
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
-                    className="mt-2 p-4 bg-white/40 dark:bg-black/20 rounded-2xl border border-current/5 text-[11px] leading-relaxed"
+                    className="mt-2 p-4 bg-white/40 dark:bg-black/20 rounded-2xl border border-current/5 text-sm leading-relaxed"
                   >
-                    <div className="flex items-center gap-2 font-black mb-2 uppercase tracking-widest text-[8px] opacity-60">
+                    <div className="flex items-center gap-2 font-black mb-2 tracking-wide font-medium text-xs opacity-60">
                       <Brain size={12} />
                       Contextual Logic
                     </div>
@@ -274,14 +274,14 @@ export default function HintPanel({
             className="p-5 rounded-3xl border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center gap-4 bg-slate-50/30 dark:bg-slate-900/10"
           >
              <div className="flex flex-col items-center gap-1 text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <p className="text-sm font-black text-slate-400 tracking-wide font-medium flex items-center gap-2">
                    {levelIcons[hints.length]} Next Step Available: {levelLabels[hints.length]}
                 </p>
-                <p className="text-[9px] text-slate-400 italic font-serif">Still facing interference? Reveal the next layer of complexity.</p>
+                <p className="text-sm text-slate-400 italic font-serif">Still facing interference? Reveal the next layer of complexity.</p>
              </div>
              <button
                onClick={() => onGetHint(false)}
-               className="bg-primary text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-primary-hover shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
+               className="bg-primary text-white px-6 py-3 rounded-xl font-black tracking-wide font-medium text-sm hover:bg-primary-hover shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all active:scale-95"
              >
                 Unlock Next Hint <ChevronRight size={14} />
              </button>
@@ -291,7 +291,7 @@ export default function HintPanel({
         {isLoading && (
           <div className="flex flex-col items-center justify-center gap-4 p-8 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl animate-pulse">
              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Extracting Logic...</p>
+             <p className="text-sm font-black tracking-wide font-medium text-slate-400">Extracting Logic...</p>
           </div>
         )}
       </div>

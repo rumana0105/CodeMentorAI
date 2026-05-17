@@ -64,11 +64,11 @@ export default function ChatAssistant() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-xl w-[400px] h-[600px] rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-white/5 flex flex-col mb-6 overflow-hidden"
+            className="bg-[#0b0c10]/90 backdrop-blur-xl w-[400px] h-[600px] rounded-[2.5rem] shadow-[0_0_40px_rgba(188,19,254,0.3)] border border-white/10 flex flex-col mb-6 overflow-hidden"
           >
             {/* Header */}
-            <div className="p-6 bg-[#4F46E5] text-white flex items-center justify-between relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-700">
+            <div className="p-6 bg-gradient-to-r from-[#bc13fe] to-[#45f3ff] text-white flex items-center justify-between relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-125 transition-transform duration-700 mix-blend-overlay">
                 <Bot size={120} />
               </div>
               <div className="flex items-center gap-4 relative z-10">
@@ -76,10 +76,10 @@ export default function ChatAssistant() {
                   <Bot size={24} />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm uppercase tracking-widest">Mentor_AI</h3>
+                  <h3 className="font-black text-sm uppercase tracking-widest text-[#0b0c10]">Mentor_AI</h3>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
-                    <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest leading-none">Status: Nominal</p>
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                    <p className="text-[10px] font-bold text-[#0b0c10]/70 uppercase tracking-widest leading-none">Status: Nominal</p>
                   </div>
                 </div>
               </div>
@@ -102,8 +102,8 @@ export default function ChatAssistant() {
                     className={cn(
                       "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-110",
                       msg.role === "assistant" 
-                        ? "bg-white dark:bg-slate-800 text-[#4F46E5] border border-slate-100 dark:border-slate-700" 
-                        : "bg-[#4F46E5] text-white"
+                        ? "bg-[#1f2833] text-[#45f3ff] border border-white/10 shadow-[0_0_10px_rgba(69,243,255,0.2)]" 
+                        : "bg-gradient-to-br from-[#bc13fe] to-[#45f3ff] text-white"
                     )}
                   >
                     {msg.role === "assistant" ? <Bot size={20} /> : <User size={20} />}
@@ -112,8 +112,8 @@ export default function ChatAssistant() {
                     className={cn(
                       "max-w-[75%] p-4 rounded-[1.5rem] text-sm shadow-sm leading-relaxed",
                       msg.role === "assistant" 
-                        ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-100 dark:border-slate-700 font-serif italic" 
-                        : "bg-[#4F46E5] text-white rounded-tr-none font-bold"
+                        ? "bg-[#1f2833] text-gray-200 rounded-tl-none border border-white/10 font-serif italic shadow-[0_0_15px_rgba(69,243,255,0.05)]" 
+                        : "bg-[#bc13fe]/20 backdrop-blur-md border border-[#bc13fe]/30 text-white rounded-tr-none font-bold"
                     )}
                   >
                     {msg.content}
@@ -122,20 +122,20 @@ export default function ChatAssistant() {
               ))}
               {isLoading && (
                 <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
-                  <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 text-[#4F46E5] flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm">
+                  <div className="w-10 h-10 rounded-2xl bg-[#1f2833] text-[#45f3ff] flex items-center justify-center border border-white/10 shadow-[0_0_10px_rgba(69,243,255,0.2)]">
                     <Bot size={20} />
                   </div>
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-[1.5rem] rounded-tl-none shadow-sm flex gap-1.5 border border-slate-100 dark:border-slate-700">
-                    <div className="w-2 h-2 bg-[#4F46E5] rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-[#4F46E5] rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-2 h-2 bg-[#4F46E5] rounded-full animate-bounce [animation-delay:0.4s]" />
+                  <div className="bg-[#1f2833] p-4 rounded-[1.5rem] rounded-tl-none shadow-sm flex gap-1.5 border border-white/10">
+                    <div className="w-2 h-2 bg-[#45f3ff] rounded-full animate-bounce shadow-[0_0_5px_rgba(69,243,255,0.5)]" />
+                    <div className="w-2 h-2 bg-[#45f3ff] rounded-full animate-bounce [animation-delay:0.2s] shadow-[0_0_5px_rgba(69,243,255,0.5)]" />
+                    <div className="w-2 h-2 bg-[#45f3ff] rounded-full animate-bounce [animation-delay:0.4s] shadow-[0_0_5px_rgba(69,243,255,0.5)]" />
                   </div>
                 </div>
               )}
             </div>
 
             {/* Input */}
-            <div className="p-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg border-t border-white/20 dark:border-white/5">
+            <div className="p-6 bg-[#0b0c10]/80 backdrop-blur-lg border-t border-white/10">
               <div className="flex gap-3 relative">
                 <input
                   type="text"
@@ -143,12 +143,12 @@ export default function ChatAssistant() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Input query to Mentor_AI..."
-                  className="flex-1 bg-white dark:bg-slate-800 border-none rounded-[1.25rem] px-6 py-4 text-sm focus:ring-4 focus:ring-[#4F46E5]/10 transition-all outline-none shadow-inner font-bold placeholder:text-slate-400 placeholder:italic placeholder:font-normal"
+                  className="flex-1 bg-[#1f2833] border border-white/5 rounded-[1.25rem] px-6 py-4 text-sm focus:ring-1 focus:ring-[#bc13fe] focus:border-[#bc13fe] transition-all outline-none text-white font-bold placeholder:text-gray-500 placeholder:italic placeholder:font-normal"
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading}
-                  className="bg-[#4F46E5] text-white p-4 rounded-[1.25rem] hover:bg-[#4338CA] disabled:opacity-50 transition-all shadow-lg shadow-indigo-100 active:scale-90 flex items-center justify-center shrink-0 border border-white/10"
+                  className="bg-gradient-to-r from-[#bc13fe] to-[#45f3ff] text-[#0b0c10] p-4 rounded-[1.25rem] disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(188,19,254,0.4)] active:scale-90 flex items-center justify-center shrink-0"
                 >
                   <Send size={20} />
                 </button>
@@ -161,8 +161,8 @@ export default function ChatAssistant() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95",
-          isOpen ? "bg-white text-[#4F46E5] rotate-90" : "bg-[#4F46E5] text-white"
+          "w-14 h-14 rounded-full shadow-[0_0_30px_rgba(188,19,254,0.5)] flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95",
+          isOpen ? "bg-[#1f2833] text-[#45f3ff] rotate-90 border border-[#45f3ff]/30" : "bg-gradient-to-r from-[#bc13fe] to-[#45f3ff] text-[#0b0c10]"
         )}
       >
         {isOpen ? <X size={28} /> : <MessageSquare size={28} />}

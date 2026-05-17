@@ -123,7 +123,7 @@ export default function SubmissionHistory() {
                         "text-sm font-semibold capitalize",
                         sub.status === "accepted" ? "text-green-600" : "text-red-600"
                       )}>
-                        {sub.status.replace("_", " ")}
+                        {(sub.status || "unknown").replace("_", " ")}
                       </span>
                     </div>
                   </td>

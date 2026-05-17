@@ -40,7 +40,7 @@ function InfoBox({ title, content, icon: Icon }: any) {
     <div className="bg-[#F9FAFB] dark:bg-[#0F172A] p-4 rounded-xl border border-[#E5E7EB] dark:border-[#334155]">
       <div className="flex items-center gap-2 mb-1 text-[#4F46E5] dark:text-[#818CF8]">
         <Icon size={14} />
-        <span className="text-[10px] font-bold uppercase tracking-wider">{title}</span>
+        <span className="text-sm font-bold  tracking-wider">{title}</span>
       </div>
       <div className="text-xs text-[#1A1A1A] dark:text-gray-300 leading-relaxed prose prose-xs dark:prose-invert max-w-none">
         <MarkdownRenderer content={content} />
@@ -794,7 +794,7 @@ export default function ProblemView() {
   }
 
   return (
-    <div className={`h-[calc(100vh-12rem)] flex flex-col gap-6 transition-colors duration-500 ${interviewMode ? 'dark:bg-[#1a1010]/20' : ''}`}>
+    <div className={`h-[calc(100vh-12rem)] min-h-[800px] flex flex-col gap-6 transition-colors duration-500 ${interviewMode ? 'dark:bg-[#1a1010]/20' : ''}`}>
       {/* Code Preview Modal */}
       {previewVersion && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-8 animate-in fade-in duration-300">
@@ -805,8 +805,8 @@ export default function ProblemView() {
                   <History size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Version_Snapshot</h3>
-                  <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">
+                  <h3 className="text-xl font-black text-slate-800 dark:text-white  tracking-tight">Version_Snapshot</h3>
+                  <p className="text-xs text-slate-500 font-mono tracking-widest ">
                     Stored {new Date(previewVersion.timestamp).toLocaleString()} • Triggered by {previewVersion.trigger}
                   </p>
                 </div>
@@ -833,13 +833,13 @@ export default function ProblemView() {
             <div className="p-8 border-t border-[#E5E7EB] dark:border-[#334155] flex justify-end gap-4 bg-slate-50 dark:bg-slate-900/50">
               <button
                 onClick={() => setPreviewVersion(null)}
-                className="px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
+                className="px-8 py-3 rounded-2xl font-black  text-xs tracking-widest text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
               >
                 Dismiss
               </button>
               <button
                 onClick={() => handleRestoreVersion(previewVersion)}
-                className="px-10 py-3 bg-primary text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary-hover transition-all glow-primary"
+                className="px-10 py-3 bg-primary text-white rounded-2xl font-black  text-xs tracking-widest hover:bg-primary-hover transition-all glow-primary"
               >
                 Revert to This Version
               </button>
@@ -853,7 +853,7 @@ export default function ProblemView() {
         {interviewMode && (
           <div className="flex items-center gap-2 px-4 py-1.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl mr-4 shrink-0 animate-pulse">
             <ShieldAlert size={14} />
-            <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">GitHub sync disabled during interview for fair evaluation</span>
+            <span className="text-sm font-black tracking-wide font-medium whitespace-nowrap">GitHub sync disabled during interview for fair evaluation</span>
           </div>
         )}
         {typingUser && (
@@ -863,10 +863,10 @@ export default function ProblemView() {
               <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest">{typingUser} is coding...</span>
+            <span className="text-sm font-bold tracking-wide font-medium">{typingUser} is coding...</span>
           </div>
         )}
-        <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+        <div className="flex gap-8 text-sm font-bold tracking-wide font-medium text-[#6B7280]">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <Timer size={14} className="text-primary" />
@@ -931,7 +931,7 @@ export default function ProblemView() {
                       setSelectedBranch(e.target.value);
                     }
                   }}
-                  className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 cursor-pointer p-0"
+                  className="bg-transparent border-none text-sm font-black tracking-wide font-medium focus:ring-0 cursor-pointer p-0"
                 >
                   {branches.map(b => (
                     <option key={b.name} value={b.name}>{b.name}</option>
@@ -950,7 +950,7 @@ export default function ProblemView() {
           </button>
 
           <div className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border",
+            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black  tracking-tighter border",
             interviewMode ? "bg-red-500 text-white border-red-600" : "bg-green-500/10 text-green-500 border-green-500/20"
           )}>
             {interviewMode ? <ShieldAlert size={14} /> : <ShieldCheck size={14} />}
@@ -972,7 +972,7 @@ export default function ProblemView() {
             </p>
             <div className="space-y-4 mb-8">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#9CA3AF] mb-2 block">Branch Name</label>
+                <label className="text-sm font-black tracking-wide font-medium text-[#9CA3AF] mb-2 block">Branch Name</label>
                 <input
                   type="text"
                   value={newBranchName}
@@ -982,7 +982,7 @@ export default function ProblemView() {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#9CA3AF] mb-2 block">Base Branch</label>
+                <label className="text-sm font-black tracking-wide font-medium text-[#9CA3AF] mb-2 block">Base Branch</label>
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
@@ -1054,7 +1054,7 @@ export default function ProblemView() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/")}
@@ -1071,7 +1071,7 @@ export default function ProblemView() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end">
           <div className="relative" ref={langDropdownRef}>
             <button
               onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
@@ -1132,7 +1132,7 @@ export default function ProblemView() {
             onClick={() => handleDebug(false)}
             disabled={isDebugLoading || interviewMode}
             title="Locate logic errors by stepping through code execution"
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-30 dark:text-white"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl text-sm font-black tracking-wide font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-30 dark:text-white"
           >
             <Bug size={14} className="text-[#F59E0B]" />
             Debug
@@ -1141,7 +1141,7 @@ export default function ProblemView() {
             onClick={handleRequestReview}
             disabled={isReviewLoading || interviewMode}
             title="Receive AI-powered feedback on performance and architecture"
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-30 dark:text-white"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl text-sm font-black tracking-wide font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-30 dark:text-white"
           >
             <ShieldCheck size={14} className="text-[#10B981]" />
             Review
@@ -1150,7 +1150,7 @@ export default function ProblemView() {
             onClick={() => handleGetHint(false)}
             disabled={isHintLoading || interviewMode}
             title="Stuck? Request a subtle nudget toward the solution"
-            className="flex items-center gap-2 px-3 py-2 text-slate-400 dark:text-slate-500 hover:text-primary transition-all disabled:opacity-30 text-[10px] font-black uppercase tracking-widest"
+            className="flex items-center gap-2 px-3 py-2 text-slate-400 dark:text-slate-500 hover:text-primary transition-all disabled:opacity-30 text-sm font-black tracking-wide font-medium"
           >
             <HelpCircle size={14} />
             Hint
@@ -1159,7 +1159,7 @@ export default function ProblemView() {
             onClick={() => handleRun()}
             disabled={isExecuting || isSubmitting}
             title="Execute script to verify logic (Ctrl + Enter)"
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white border border-primary/40 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all shadow-[0_0_30px_rgba(79,70,229,0.35)] glow-primary disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white border border-primary/40 rounded-xl text-sm font-black tracking-wide font-medium hover:bg-primary-hover transition-all shadow-[0_0_30px_rgba(79,70,229,0.35)] glow-primary disabled:opacity-50"
           >
             <Play size={14} />
             {isExecuting ? "Running..." : "Run Code"}
@@ -1168,7 +1168,7 @@ export default function ProblemView() {
             onClick={handleSubmit}
             disabled={isExecuting || isSubmitting}
             title="Initiate final submission and behavioral analysis"
-            className="flex items-center gap-2 px-8 py-3 bg-white dark:bg-[#1E293B] text-primary rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-95 transition-all border border-primary/30 shadow-sm glow-primary disabled:opacity-50"
+            className="flex items-center gap-2 px-8 py-3 bg-white dark:bg-[#1E293B] text-primary rounded-2xl font-black tracking-wide font-medium text-sm hover:scale-[1.02] active:scale-95 transition-all border border-primary/30 shadow-sm glow-primary disabled:opacity-50"
           >
             <Send size={16} />
             {isSubmitting ? "Processing..." : "Submit"}
@@ -1206,7 +1206,7 @@ export default function ProblemView() {
         {isTimelineOpen && (
           <div className="absolute top-0 right-0 bottom-0 w-80 bg-white dark:bg-[#0F172A] border-l border-[#E5E7EB] dark:border-[#334155] z-40 transform transition-transform animate-in slide-in-from-right duration-300 shadow-2xl overflow-hidden flex flex-col rounded-l-3xl">
             <div className="p-6 border-b border-[#E5E7EB] dark:border-[#334155] flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-              <h4 className="font-black text-sm uppercase tracking-widest flex items-center gap-2">
+              <h4 className="font-black text-sm tracking-wide font-medium flex items-center gap-2">
                 <History size={16} className="text-primary" />
                 Version Timeline
               </h4>
@@ -1227,18 +1227,18 @@ export default function ProblemView() {
               {versionHistory.map((version, i) => (
                 <div key={i} className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 pb-2">
                   <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white dark:bg-[#0F172A] border-2 border-primary" />
-                  <div className="text-[10px] font-black uppercase text-primary mb-1 tracking-tighter">
+                  <div className="text-sm font-black  text-primary mb-1 tracking-tighter">
                     {version.trigger.replace('_', ' ')}
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all cursor-pointer group"
                     onClick={() => setPreviewVersion(version)}>
-                    <div className="text-[10px] text-slate-500 mb-2 font-mono">
+                    <div className="text-sm text-slate-500 mb-2 font-mono">
                       {new Date(version.timestamp).toLocaleTimeString()}
                     </div>
-                    <code className="text-[10px] font-mono text-slate-600 dark:text-slate-400 line-clamp-2 block">
+                    <code className="text-sm font-mono text-slate-600 dark:text-slate-400 line-clamp-2 block">
                       {version.code.substring(0, 100)}...
                     </code>
-                    <div className="mt-2 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1">
+                    <div className="mt-2 text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1">
                       Preview <ChevronRight size={10} />
                     </div>
                   </div>
@@ -1251,8 +1251,8 @@ export default function ProblemView() {
         {/* Left: Problem & Hints */}
         <div className="lg:col-span-4 flex flex-col gap-6 min-h-0">
           {/* Tabs for Problem Info */}
-          <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E5E7EB] dark:border-[#334155] flex flex-col min-h-0 flex-1 transition-colors">
-            <div className="flex border-b border-[#E5E7EB] dark:border-[#334155]">
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E5E7EB] dark:border-[#334155] flex flex-col min-h-0 flex-1 transition-colors overflow-hidden">
+            <div className="flex border-b border-[#E5E7EB] dark:border-[#334155] overflow-x-auto whitespace-nowrap custom-scrollbar">
               <button
                 onClick={() => setActiveTab("description")}
                 className={cn(
@@ -1356,7 +1356,7 @@ export default function ProblemView() {
                     <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-all transform rotate-12">
                       <Terminal size={120} />
                     </div>
-                    <h4 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">
+                    <h4 className="flex items-center gap-2 text-sm font-black tracking-wide font-medium text-slate-400 mb-4">
                       <BookOpen size={14} className="text-primary" />
                       Platform Specification
                     </h4>
@@ -1376,7 +1376,7 @@ export default function ProblemView() {
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-500/30" />
                       <div className="w-2.5 h-2.5 rounded-full bg-green-500/30" />
                     </div>
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#475569] mb-4">Constraints_Log</h4>
+                    <h4 className="text-sm font-black tracking-wide font-medium text-[#475569] mb-4">Constraints_Log</h4>
                     <pre className="text-blue-400 text-xs overflow-x-auto custom-scrollbar">
                       {problem.constraints}
                     </pre>
@@ -1384,7 +1384,7 @@ export default function ProblemView() {
 
                   {problem.snippets && problem.snippets.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-[#9CA3AF] mb-4">Helpful Snippets</h4>
+                      <h4 className="text-sm font-bold  tracking-wider text-[#9CA3AF] mb-4">Helpful Snippets</h4>
                       {problem.snippets.map((snippet, i) => (
                         <CodeSnippet key={i} title={snippet.title} code={snippet.code} />
                       ))}
@@ -1415,7 +1415,7 @@ export default function ProblemView() {
               {activeTab === "aisolution" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold uppercase tracking-wider text-[#9CA3AF]">AI-Generated Solution</h4>
+                    <h4 className="text-sm font-bold  tracking-wider text-[#9CA3AF]">AI-Generated Solution</h4>
                     {!solutionViewed && (
                       <button
                         onClick={handleRequestSolution}
@@ -1432,7 +1432,7 @@ export default function ProblemView() {
                   ) : fullSolution ? (
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <MarkdownRenderer content={fullSolution} />
-                      <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl text-[10px] text-red-600 dark:text-red-400">
+                      <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl text-sm text-red-600 dark:text-red-400">
                         ⚠️ This problem is now marked as "Fully AI Assisted".
                       </div>
                     </div>
@@ -1475,14 +1475,14 @@ export default function ProblemView() {
               )}
               {activeTab === "solutions" && (
                 <div className="space-y-6">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-[#9CA3AF]">Peer Solutions</h4>
+                  <h4 className="text-sm font-bold  tracking-wider text-[#9CA3AF]">Peer Solutions</h4>
                   {peerSolutions.length > 0 ? (
                     <div className="space-y-4">
                       {peerSolutions.map((sol) => (
                         <div key={sol.id} className="bg-[#F9FAFB] dark:bg-[#0F172A] p-4 rounded-xl border border-[#E5E7EB] dark:border-[#334155]">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-[#4F46E5] dark:text-[#818CF8] uppercase">{sol.language}</span>
-                            <span className="text-[10px] text-[#6B7280] dark:text-[#94A3B8]">{new Date(sol.timestamp).toLocaleDateString()}</span>
+                            <span className="text-xs font-bold text-[#4F46E5] dark:text-[#818CF8] ">{sol.language}</span>
+                            <span className="text-sm text-[#6B7280] dark:text-[#94A3B8]">{new Date(sol.timestamp).toLocaleDateString()}</span>
                           </div>
                           <pre className="text-xs font-mono bg-white dark:bg-[#1E293B] p-3 rounded-lg border border-[#E5E7EB] dark:border-[#334155] overflow-x-auto dark:text-gray-300">
                             {sol.code}
@@ -1518,10 +1518,10 @@ export default function ProblemView() {
         </div>
 
         {/* Right: Editor */}
-        <div className="lg:col-span-8 min-h-0">
-          <div className="mb-4 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-[#334155] rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
+        <div className="lg:col-span-8 min-h-0 flex flex-col">
+          <div className="mb-4 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-[#334155] rounded-2xl px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#6B7280] cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm font-black tracking-wide font-medium text-[#6B7280] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={autosaveEnabled}
@@ -1532,7 +1532,7 @@ export default function ProblemView() {
               </label>
               <label
                 className={cn(
-                  "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none",
+                  "flex items-center gap-2 text-sm font-black tracking-wide font-medium cursor-pointer select-none",
                   autosaveEnabled ? "text-[#6B7280]" : "text-[#94A3B8]"
                 )}
               >
@@ -1546,16 +1546,18 @@ export default function ProblemView() {
                 Run on Save
               </label>
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-[#6B7280] whitespace-nowrap">
+            <div className="text-sm font-black tracking-wide font-medium text-[#6B7280] whitespace-nowrap">
               {autosaveEnabled ? "Snapshots enabled" : "Snapshots paused"}
             </div>
           </div>
-          <CodeEditor
-            code={codes}
-            onChange={handleCodeChange}
-            language={language}
-            highlightedLine={activeTab === "debug" ? debugSteps[currentStepIndex]?.line : undefined}
-          />
+          <div className="flex-1 min-h-0">
+            <CodeEditor
+              code={codes}
+              onChange={handleCodeChange}
+              language={language}
+              highlightedLine={activeTab === "debug" ? debugSteps[currentStepIndex]?.line : undefined}
+            />
+          </div>
         </div>
       </div>
     </div>

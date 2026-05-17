@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { INITIAL_PROBLEMS } from "../constants";
 import ProblemCard from "./ProblemCard";
 import RoadmapView from "./RoadmapView";
-import { Trophy, Target, Zap, TrendingUp, Award, Brain, Activity, Layers, Search, Cpu, ArrowRight, Clock, BarChart3, AlertTriangle, Monitor, Code2, Terminal, Network, ShieldCheck, LayoutDashboard, Github, FileDown, Loader2 } from "lucide-react";
+import { Trophy, Target, Zap, TrendingUp, Award, Brain, Activity, Layers, Search, Cpu, ArrowRight, Clock, BarChart3, AlertTriangle, Monitor, Code2, Terminal, Network, ShieldCheck, LayoutDashboard, Github, FileDown, Loader2, Flame } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from "recharts";
 import { cn } from "../lib/utils";
 import { getLeaderboard } from "../services/forum";
@@ -112,8 +112,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-16 pb-24">
       {/* SaaS Style Hero Section */}
-      <section className="relative min-h-[500px] flex items-center rounded-[3rem] overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 shadow-2xl shadow-indigo-500/5 group transition-colors duration-300">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(79,70,229,0.08)_0%,transparent_50%)]" />
+      <section className="relative min-h-[500px] flex items-center rounded-[3rem] overflow-hidden bg-[#1f2833] border border-white/10 shadow-2xl shadow-[#bc13fe]/20 group transition-colors duration-300">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(188,19,254,0.08)_0%,transparent_50%)]" />
         <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:opacity-20 transition-opacity">
           <Network size={400} className="text-primary rotate-12" />
         </div>
@@ -142,7 +142,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => navigate('/battleground')}
-                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-3"
+                className="bg-[#0b0c10] text-[#45f3ff] border border-white/10 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-[#1f2833] transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(69,243,255,0.2)]"
               >
                 <Zap size={18} className="text-yellow-500" />
                 Enter Battleground
@@ -150,7 +150,7 @@ export default function Dashboard() {
               <button
                 onClick={handleDownloadReport}
                 disabled={isDownloading}
-                className="bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-3 disabled:opacity-50"
+                className="bg-[#0b0c10]/50 text-gray-400 border border-white/5 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white hover:bg-[#1f2833] transition-all flex items-center gap-3 disabled:opacity-50"
               >
                 {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
                 Download Report
@@ -169,15 +169,15 @@ export default function Dashboard() {
               <div className="absolute bottom-12 right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-700" />
 
               <div className="relative flex flex-col items-center">
-                <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-6 transform -rotate-6">
-                  <Code2 size={40} className="text-primary" />
+                <div className="w-24 h-24 bg-[#0b0c10] rounded-3xl shadow-2xl border border-[#45f3ff]/30 flex items-center justify-center mb-6 transform -rotate-6 shadow-[0_0_20px_rgba(69,243,255,0.3)]">
+                  <Code2 size={40} className="text-[#45f3ff]" />
                 </div>
                 <div className="flex gap-4">
-                  <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center justify-center transform rotate-12">
-                    <Terminal size={24} className="text-indigo-400" />
+                  <div className="w-16 h-16 bg-[#0b0c10] rounded-2xl shadow-xl border border-[#bc13fe]/30 flex items-center justify-center transform rotate-12 shadow-[0_0_15px_rgba(188,19,254,0.2)]">
+                    <Terminal size={24} className="text-[#bc13fe]" />
                   </div>
-                  <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center justify-center transform -rotate-3 translate-y-4">
-                    <Monitor size={24} className="text-blue-400" />
+                  <div className="w-16 h-16 bg-[#0b0c10] rounded-2xl shadow-xl border border-white/10 flex items-center justify-center transform -rotate-3 translate-y-4">
+                    <Monitor size={24} className="text-gray-400" />
                   </div>
                 </div>
                 <div className="mt-12 text-center">
@@ -192,16 +192,16 @@ export default function Dashboard() {
 
       {/* Grid of Micro Stats */}
       <section className="grid grid-cols-2 md:grid-cols-5 gap-6">
-        <StatCard icon={Trophy} label="Mastered" value={progress?.solvedProblems.length.toString() || "0"} color="text-yellow-500" bg="bg-white dark:bg-[#0F172A] border-slate-200 dark:border-slate-800 shadow-sm" />
-        <StatCard icon={Zap} label="XP Growth" value={progress?.xp.toString() || "0"} color="text-indigo-500" bg="bg-white dark:bg-[#0F172A] border-slate-200 dark:border-slate-800 shadow-sm" />
-        <StatCard icon={Target} label="Logic Accuracy" value={(progress?.accuracy || 0) + "%"} color="text-green-500" bg="bg-white dark:bg-[#0F172A] border-slate-200 dark:border-slate-800 shadow-sm" />
-        <StatCard icon={Clock} label="Avg_Clock_Time" value={avgTimePerProblem + "m"} color="text-blue-500" bg="bg-white dark:bg-[#0F172A] border-slate-200 dark:border-slate-800 shadow-sm" />
+        <StatCard icon={Trophy} label="Mastered" value={progress?.solvedProblems.length.toString() || "0"} color="text-yellow-500" bg="bg-[#1f2833] border-white/10 shadow-sm" />
+        <StatCard icon={Flame} label="Streak" value={`${progress?.streak || 0} Days`} color="text-[#ff007f]" bg="bg-[#1f2833] border-white/10 shadow-sm" />
+        <StatCard icon={Target} label="Logic Accuracy" value={(progress?.accuracy || 0) + "%"} color="text-green-500" bg="bg-[#1f2833] border-white/10 shadow-sm" />
+        <StatCard icon={Clock} label="Avg_Clock_Time" value={avgTimePerProblem + "m"} color="text-[#45f3ff]" bg="bg-[#1f2833] border-white/10 shadow-sm" />
         <StatCard
           icon={Github}
           label="Portfolio_Syncs"
           value={progress?.github?.totalCommits.toString() || "0"}
-          color="text-slate-900 dark:text-white"
-          bg="bg-white dark:bg-[#0F172A] border-slate-200 dark:border-slate-800 shadow-sm"
+          color="text-white"
+          bg="bg-[#1f2833] border-white/10 shadow-sm"
           onClick={() => navigate('/profile')}
         />
       </section>
@@ -213,8 +213,8 @@ export default function Dashboard() {
 
       {/* AI Recommendations HERO - Ultra Prominent */}
       {(recommendations.length > 0 || isRecLoading) && (
-        <section className="bg-slate-900 rounded-[3.5rem] p-12 relative overflow-hidden shadow-2xl shadow-indigo-500/20 text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_0%,rgba(79,70,229,0.15)_0%,transparent_70%)]" />
+        <section className="bg-[#1f2833] rounded-[3.5rem] p-12 relative overflow-hidden shadow-[0_0_40px_rgba(188,19,254,0.15)] text-white border border-white/10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_0%,rgba(188,19,254,0.15)_0%,transparent_70%)]" />
           <div className="absolute bottom-0 right-0 p-20 opacity-[0.05] pointer-events-none">
             <Brain size={400} />
           </div>
@@ -247,7 +247,7 @@ export default function Dashboard() {
                       <div
                         key={rec.problemId}
                         onClick={() => navigate(`/problem/${rec.problemId}`)}
-                        className="bg-slate-800/50 backdrop-blur-md border border-white/5 p-6 rounded-[2.5rem] hover:bg-slate-800 transition-all cursor-pointer group hover:-translate-y-2 border-b-4 border-b-transparent hover:border-b-primary"
+                        className="bg-[#0b0c10]/50 backdrop-blur-md border border-white/5 p-6 rounded-[2.5rem] hover:bg-[#0b0c10] transition-all cursor-pointer group hover:-translate-y-2 border-b-4 border-b-transparent hover:border-b-primary shadow-lg"
                       >
                         <div className="flex items-center justify-between mb-4">
                           <span className={cn(
@@ -332,14 +332,14 @@ export default function Dashboard() {
         {/* Left Column: Intelligence Trends & Problems */}
         <div className="lg:col-span-8 space-y-12">
           {/* Trends Dashboard */}
-          <section className="bg-white dark:bg-[#0F172A] rounded-[3rem] border border-slate-200 dark:border-slate-800 p-8 lg:p-12 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors">
+          <section className="bg-[#1f2833] rounded-[3rem] border border-white/10 p-8 lg:p-12 shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-colors">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
               <div className="space-y-2">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 flex items-center gap-2">
                   <Activity size={16} className="text-primary" />
                   COG_METRIC_ANALYTICS_VIBRANCY
                 </h3>
-                <p className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">Performance Entropy</p>
+                <p className="text-2xl font-black tracking-tight text-white">Performance Entropy</p>
               </div>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
@@ -369,11 +369,11 @@ export default function Dashboard() {
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: "bold", fill: "#64748b" }} />
                   <YAxis hide />
                   <Tooltip
-                    contentStyle={{ borderRadius: "24px", border: "none", backgroundColor: "#0F172A", color: "#fff", fontSize: "10px", fontWeight: "bold", padding: "16px" }}
-                    cursor={{ stroke: "#4F46E5", strokeWidth: 1 }}
+                    contentStyle={{ borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)", backgroundColor: "#0b0c10", color: "#fff", fontSize: "10px", fontWeight: "bold", padding: "16px" }}
+                    cursor={{ stroke: "#bc13fe", strokeWidth: 1 }}
                   />
-                  <Area type="monotone" dataKey="hints" stroke="#4F46E5" strokeWidth={5} fillOpacity={1} fill="url(#colorHints)" name="Cognitive Load" />
-                  <Area type="monotone" dataKey="dependencyScore" stroke="#EF4444" strokeWidth={2} strokeDasharray="8 8" fillOpacity={1} fill="url(#colorDependency)" name="AI Dependency" />
+                  <Area type="monotone" dataKey="hints" stroke="#bc13fe" strokeWidth={5} fillOpacity={1} fill="url(#colorHints)" name="Cognitive Load" />
+                  <Area type="monotone" dataKey="dependencyScore" stroke="#ff007f" strokeWidth={2} strokeDasharray="8 8" fillOpacity={1} fill="url(#colorDependency)" name="AI Dependency" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -394,8 +394,8 @@ export default function Dashboard() {
                     className={cn(
                       "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                       difficultyFilter === diff
-                        ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
-                        : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                        ? "bg-[#0b0c10] text-[#45f3ff] shadow-[0_0_10px_rgba(69,243,255,0.2)] border border-white/5"
+                        : "text-gray-500 hover:text-white"
                     )}
                   >
                     {diff}
@@ -415,23 +415,23 @@ export default function Dashboard() {
         {/* Right Column: Global Meta & Performance */}
         <div className="lg:col-span-4 space-y-12">
           {/* Categorical Radar */}
-          <section className="bg-white dark:bg-[#0F172A] rounded-[3rem] border border-slate-200 dark:border-slate-800 p-10 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-10 flex items-center gap-2">
-              <BarChart3 size={16} className="text-blue-500" />
+          <section className="bg-[#1f2833] rounded-[3rem] border border-white/10 p-10 shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-colors">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-10 flex items-center gap-2">
+              <BarChart3 size={16} className="text-[#45f3ff]" />
               TOPIC_SATURATION
             </h3>
             {topicData.length > 0 ? (
               <div className="h-80 w-full -ml-4">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={topicData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.1} />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fontWeight: "bold", fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fontWeight: "bold", fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                     <Tooltip
-                      contentStyle={{ borderRadius: "20px", border: "none", backgroundColor: "#0F172A", color: "#fff", fontSize: "10px", padding: "12px" }}
-                      cursor={{ fill: '#4F46E5', opacity: 0.05 }}
+                      contentStyle={{ borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", backgroundColor: "#0b0c10", color: "#fff", fontSize: "10px", padding: "12px" }}
+                      cursor={{ fill: '#bc13fe', opacity: 0.1 }}
                     />
-                    <Bar dataKey="value" fill="#6366F1" radius={[0, 10, 10, 0]} barSize={24} />
+                    <Bar dataKey="value" fill="#bc13fe" radius={[0, 10, 10, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -444,13 +444,13 @@ export default function Dashboard() {
           </section>
 
           {/* Intelligence Split */}
-          <section className="bg-white dark:bg-[#0F172A] rounded-[3rem] border border-slate-200 dark:border-slate-800 p-10 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-10 flex items-center gap-2">
-              <Brain size={16} className="text-purple-500" />
+          <section className="bg-[#1f2833] rounded-[3rem] border border-white/10 p-10 shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-colors">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-10 flex items-center gap-2">
+              <Brain size={16} className="text-primary" />
               INTELLIGENCE_QUOTIENT_SPLIT
             </h3>
             <div className="h-56 w-full flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={300}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={aiUsageData}
@@ -485,11 +485,11 @@ export default function Dashboard() {
           </section>
 
           {/* Global Terminal Rankings */}
-          <section className="bg-slate-900 rounded-[3rem] p-10 shadow-2xl shadow-indigo-500/10 text-white relative overflow-hidden">
+          <section className="bg-[#1f2833] rounded-[3rem] p-10 shadow-[0_0_40px_rgba(188,19,254,0.15)] text-white relative overflow-hidden border border-white/10">
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <Trophy size={120} />
             </div>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-10 flex items-center gap-2 relative z-10">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#45f3ff] mb-10 flex items-center gap-2 relative z-10">
               <Award size={18} />
               SYSTEM_LEADERBOARD_TERMINAL
             </h3>
@@ -536,13 +536,13 @@ function StatCard({ icon: Icon, label, value, color, bg, onClick }: any) {
       )}
     >
       <div className="flex items-center justify-between mb-8">
-        <div className={cn("p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700", color)}>
+        <div className={cn("p-3 rounded-2xl bg-[#0b0c10] shadow-sm border border-white/5", color)}>
           <Icon size={20} />
         </div>
       </div>
       <div>
-        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2 truncate">{label}</p>
-        <p className="text-4xl font-black text-slate-800 dark:text-white leading-none tracking-tighter">{value}</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2 truncate">{label}</p>
+        <p className="text-4xl font-black text-white leading-none tracking-tighter">{value}</p>
       </div>
     </div>
   );

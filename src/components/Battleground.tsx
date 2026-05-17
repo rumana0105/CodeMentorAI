@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useAuth } from "./AuthProvider";
-import { BattleMatch, Problem } from "../types";
+import { BattleMatch } from "../types";
 import { INITIAL_PROBLEMS } from "../constants";
-import { Swords, Users, Plus, Zap, Trophy, Lock, Unlock, Timer, ChevronRight, Monitor, Network, Activity, Cpu, TrendingUp } from "lucide-react";
+import { Swords, Users, Plus, Zap, Trophy, Lock, Unlock, Timer, ChevronRight, Activity, Flame, Shield, Crosshair, Cpu } from "lucide-react";
 import { cn } from "../lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 export default function Battleground() {
   const { user } = useAuth();
@@ -16,10 +17,10 @@ export default function Battleground() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedProblemId, setSelectedProblemId] = useState(INITIAL_PROBLEMS[0].id);
   const [isMatchPrivate, setIsMatchPrivate] = useState(false);
-  const [matchDuration, setMatchDuration] = useState(15); // minutes
+  const [matchDuration, setMatchDuration] = useState(15);
+  const [activeTab, setActiveTab] = useState<"live" | "rankings">("live");
 
   useEffect(() => {
-    // Show only public waiting or active matches
     const q = query(
       collection(db, "matches"), 
       where("isPrivate", "==", false),
@@ -28,7 +29,6 @@ export default function Battleground() {
     
     const unsubscribe = onSnapshot(q, (snap) => {
       const matchData = snap.docs.map(d => ({ id: d.id, ...d.data() } as BattleMatch));
-      // Sort: waiting matches first, then by creation date
       setMatches(matchData.sort((a, b) => {
         if (a.status === "waiting" && b.status !== "waiting") return -1;
         if (a.status !== "waiting" && b.status === "waiting") return 1;
@@ -42,14 +42,12 @@ export default function Battleground() {
 
   const handleCreateMatch = async () => {
     if (!user) return;
-    
     const problem = INITIAL_PROBLEMS.find(p => p.id === selectedProblemId);
     if (!problem) return;
 
     try {
       const matchCode = isMatchPrivate ? Math.random().toString(36).substring(2, 8).toUpperCase() : null;
-      
-      const newMatch: Partial<BattleMatch> = {
+      const newMatch: any = {
         problemId: problem.id,
         creatorId: user.uid,
         creatorName: user.displayName || "Anonymous",
@@ -59,9 +57,9 @@ export default function Battleground() {
         opponentProgress: 0,
         durationMs: matchDuration * 60 * 1000,
         isPrivate: isMatchPrivate,
-        matchCode: matchCode || undefined,
         createdAt: new Date().toISOString()
       };
+      if (matchCode) newMatch.matchCode = matchCode;
 
       const docRef = await addDoc(collection(db, "matches"), newMatch);
       setShowCreateModal(false);
@@ -73,11 +71,9 @@ export default function Battleground() {
 
   const handleJoinMatch = async (matchId: string) => {
     if (!user) return;
-    
     try {
       const matchRef = doc(db, "matches", matchId);
       const matchSnap = await getDoc(matchRef);
-      
       if (!matchSnap.exists()) return;
       const match = matchSnap.data() as BattleMatch;
       
@@ -94,230 +90,273 @@ export default function Battleground() {
         status: "active",
         startTime: new Date().toISOString()
       });
-
       navigate(`/battle/${matchId}`);
     } catch (error) {
       console.error("Error joining match:", error);
     }
   };
 
+  const handleQuickMatch = async () => {
+    if (!user) return;
+    
+    // Find the first available waiting public match
+    const availableMatch = matches.find(m => m.status === "waiting" && !m.isPrivate && m.creatorId !== user.uid);
+    
+    if (availableMatch) {
+      await handleJoinMatch(availableMatch.id);
+    } else {
+      // Create a random match if none available
+      const randomProblem = INITIAL_PROBLEMS[Math.floor(Math.random() * INITIAL_PROBLEMS.length)];
+      try {
+        const newMatch: any = {
+          problemId: randomProblem.id,
+          creatorId: user.uid,
+          creatorName: user.displayName || "Anonymous",
+          creatorPhoto: user.photoURL || "",
+          status: "waiting",
+          creatorProgress: 0,
+          opponentProgress: 0,
+          durationMs: 15 * 60 * 1000,
+          isPrivate: false,
+          createdAt: new Date().toISOString()
+        };
+        const docRef = await addDoc(collection(db, "matches"), newMatch);
+        navigate(`/battle/${docRef.id}`);
+      } catch (error) {
+        console.error("Error creating quick match:", error);
+      }
+    }
+  };
+
+  const waitingMatches = matches.filter(m => m.status === "waiting");
+  const activeMatches = matches.filter(m => m.status === "active");
+
   return (
-    <div className="max-w-7xl mx-auto space-y-12 pb-24">
-      {/* Tactical Hero Section */}
-      <div className="relative overflow-hidden rounded-[3.5rem] bg-slate-900 p-16 text-white shadow-2xl border border-white/5">
-        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-12">
-          <div className="max-w-2xl space-y-8">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.3em]">
-              <Zap size={16} className="text-yellow-400 animate-pulse" />
-              Arena_Status: Global_Lobby_Live
-            </div>
-            <h1 className="text-6xl xl:text-8xl font-black leading-none tracking-tighter uppercase italic">
-              Code<span className="text-primary not-italic">_Duels_</span>
-            </h1>
-            <p className="text-slate-400 text-lg leading-relaxed max-w-xl font-medium">
-              Initialize real-time combat protocols. Secure your ranking in the global intelligence matrix. High-speed logic required for survival.
-            </p>
+    <div className="max-w-7xl mx-auto space-y-8 pb-24">
+      {/* Neo-Cyberpunk Hero Area */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-[#020617] p-12 text-white border border-[#1E293B] shadow-[0_0_100px_rgba(79,70,229,0.15)] flex flex-col lg:flex-row items-center justify-between gap-12 group">
+        {/* Holographic background effects */}
+        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(168,85,247,0.15)_0%,transparent_50%)] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+        
+        <div className="relative z-10 space-y-6 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-400 text-xs font-bold uppercase tracking-wider">
+            <Flame size={14} className="animate-pulse" /> Global Multiplayer Arena
           </div>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="group relative flex items-center gap-4 px-12 py-6 bg-primary text-white rounded-[2rem] font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <Plus size={24} className="relative z-10 group-hover:rotate-180 transition-transform duration-500" />
-            <span className="relative z-10">Initialize_Match</span>
-          </button>
+          <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.9]">
+            Code<span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-indigo-500">_Battles_</span>
+          </h1>
+          <p className="text-slate-400 text-lg font-medium max-w-lg leading-relaxed">
+            Enter the proving grounds. Challenge developers worldwide in real-time logic duels. Climb the Elo ranks and solidify your legacy.
+          </p>
+          <div className="flex items-center gap-6 pt-4">
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-[0_0_30px_rgba(168,85,247,0.4)] active:scale-95"
+            >
+              <Swords size={18} /> Host Match
+            </button>
+            <button 
+              onClick={handleQuickMatch}
+              className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+            >
+              <Crosshair size={18} /> Quick Match
+            </button>
+          </div>
         </div>
 
-        {/* Tactical backgrounds */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -mr-48 -mt-48" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -ml-32 -mb-32" />
-        <Network size={600} className="absolute top-[-20%] right-[-10%] text-white/5 rotate-12" />
+        {/* Floating holographic stats card */}
+        <div className="relative z-10 w-full lg:w-auto">
+           <div className="bg-[#0F172A]/80 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl relative overflow-hidden">
+             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/5" />
+             <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                   <Trophy size={24} />
+                </div>
+                <div>
+                   <p className="text-xs font-black uppercase tracking-widest text-slate-400">Your Elo Rating</p>
+                   <p className="text-3xl font-black text-white">1,452</p>
+                </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
+                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Win Rate</p>
+                   <p className="text-lg font-bold text-green-400">68.4%</p>
+                </div>
+                <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
+                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Matches</p>
+                   <p className="text-lg font-bold text-white">42</p>
+                </div>
+             </div>
+           </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-3">
-                 <Monitor className="text-primary" size={16} />
-                 Signal_Intercepts
-               </h2>
-               <p className="text-2xl font-black text-slate-900 tracking-tight">Active Transmissions</p>
-            </div>
-            <div className="text-[10px] font-black text-slate-400 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200 uppercase tracking-widest">
-              {matches.length} SECTORS_DETECTED
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Content Area */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Custom Tabs */}
+          <div className="flex gap-2 p-1.5 bg-[#1E293B] rounded-2xl border border-[#334155] w-max">
+            <button
+              onClick={() => setActiveTab("live")}
+              className={cn(
+                "px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                activeTab === "live" ? "bg-[#0F172A] text-white shadow-lg border border-white/5" : "text-slate-400 hover:text-white"
+              )}
+            >
+              Ongoing Battles
+            </button>
+            <button
+              onClick={() => setActiveTab("rankings")}
+              className={cn(
+                "px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                activeTab === "rankings" ? "bg-[#0F172A] text-white shadow-lg border border-white/5" : "text-slate-400 hover:text-white"
+              )}
+            >
+              Global Rankings
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            {isLoading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className="h-28 bg-slate-100 rounded-[2rem] animate-pulse border border-slate-200" />
-              ))
-            ) : matches.length === 0 ? (
-              <div className="h-80 flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem] p-16 text-center group">
-                <div className="w-20 h-20 bg-white rounded-[2rem] shadow-xl border border-slate-100 flex items-center justify-center mb-6 text-slate-300 group-hover:scale-110 transition-transform">
-                  <Users size={40} />
-                </div>
-                <h3 className="font-black text-slate-900 text-xl tracking-tight uppercase mb-2">No signals detected</h3>
-                <p className="text-sm text-slate-500 max-w-sm mb-8 font-medium">Initialize a match sequence to attract potential challengers in the sector.</p>
-                <button 
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-8 py-3 bg-white border-2 border-primary text-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-lg"
-                >
-                  Force_Entrance
-                </button>
-              </div>
-            ) : (
-              matches.map(match => {
-                const problem = INITIAL_PROBLEMS.find(p => p.id === match.problemId);
-                return (
-                  <div 
-                    key={match.id}
-                    className="bg-white border border-slate-200 rounded-[2.5rem] p-8 hover:border-primary transition-all group relative overflow-hidden shadow-xl shadow-slate-200/50"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
-                      <div className="flex items-center gap-6">
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-[1.5rem] border-2 border-slate-50 p-1 shadow-inner bg-slate-50">
-                             <img src={match.creatorPhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${match.creatorId}`} className="w-full h-full rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full shadow-lg" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                             <h4 className="font-black text-slate-900 group-hover:text-primary transition-colors uppercase tracking-tight text-lg">{match.creatorName}</h4>
-                             <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-widest">RANK_S</span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                             MISSION: <span className="text-slate-900">{problem?.title || "Unknown"}</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-10">
-                        <div className="text-center px-6 border-r border-slate-100">
-                          <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">Duration</p>
-                          <div className="flex items-center gap-2 text-slate-900">
-                             <Timer size={14} className="text-blue-500" />
-                             <span className="text-xs font-black font-mono">{match.durationMs / 60000}_MIN</span>
-                          </div>
-                        </div>
-
-                        <div className="text-center px-6 border-r border-slate-100">
-                          <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">Difficulty</p>
-                          <span className={cn(
-                            "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
-                            problem?.difficulty === "Easy" ? "text-green-500 bg-green-50" :
-                            problem?.difficulty === "Medium" ? "text-blue-500 bg-blue-50" :
-                                                             "text-red-500 bg-red-50"
-                          )}>
-                            {problem?.difficulty || "Hard"}
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={() => handleJoinMatch(match.id)}
-                          className={cn(
-                            "flex items-center gap-3 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all",
-                            match.status === "waiting"
-                              ? "bg-primary text-white hover:scale-105 shadow-2xl shadow-indigo-500/30"
-                              : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                          )}
-                          disabled={match.status !== "waiting"}
-                        >
-                          {match.status === "waiting" ? (
-                            <>
-                              Initialize_Link
-                              <ChevronRight size={16} />
-                            </>
-                          ) : "Link_Full"}
-                        </button>
-                      </div>
-                    </div>
-                    {/* Signal effect decors */}
-                    <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <AnimatePresence mode="wait">
+            {activeTab === "live" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                {/* Lobbies Waiting for Opponent */}
+                <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                  <Activity className="text-indigo-500" /> Awaiting Challengers ({waitingMatches.length})
+                </h3>
+                
+                {isLoading ? (
+                  <div className="grid gap-4">
+                    {[1, 2].map(i => <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse" />)}
                   </div>
-                );
-              })
+                ) : waitingMatches.length === 0 ? (
+                  <div className="p-12 text-center bg-white dark:bg-[#1E293B] rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700">
+                    <Shield size={40} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                    <p className="text-sm font-bold text-slate-500">No public lobbies open. Host a match to start fighting!</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {waitingMatches.map(match => (
+                      <MatchCard key={match.id} match={match} onJoin={handleJoinMatch} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Active Battles */}
+                <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
+                  <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2 mb-6">
+                    <Swords className="text-red-500" /> Live Duels ({activeMatches.length})
+                  </h3>
+                  <div className="grid gap-4">
+                    {activeMatches.map(match => (
+                      <MatchCard key={match.id} match={match} onJoin={handleJoinMatch} />
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             )}
-          </div>
+
+            {activeTab === "rankings" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden"
+              >
+                <table className="w-full text-left">
+                   <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                         <th className="px-6 py-4">Rank</th>
+                         <th className="px-6 py-4">Player</th>
+                         <th className="px-6 py-4 text-center">Win Rate</th>
+                         <th className="px-6 py-4 text-right">Elo Rating</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {[
+                        { name: "CodeNinja99", rank: 1, winRate: "82%", elo: 2840 },
+                        { name: "AlgorithmGod", rank: 2, winRate: "79%", elo: 2710 },
+                        { name: "ByteBreaker", rank: 3, winRate: "75%", elo: 2650 },
+                        { name: "SyntaxTerror", rank: 4, winRate: "71%", elo: 2480 },
+                        { name: "UndefinedIsAFunction", rank: 5, winRate: "68%", elo: 2310 }
+                      ].map((player) => (
+                        <tr key={player.rank} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                           <td className="px-6 py-4">
+                             <div className={cn(
+                               "w-8 h-8 rounded-full flex items-center justify-center font-black text-xs",
+                               player.rank === 1 ? "bg-amber-400 text-amber-900 shadow-[0_0_15px_#fbbf24]" :
+                               player.rank === 2 ? "bg-slate-300 text-slate-800" :
+                               player.rank === 3 ? "bg-amber-700 text-white" :
+                               "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                             )}>
+                               {player.rank}
+                             </div>
+                           </td>
+                           <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{player.name}</td>
+                           <td className="px-6 py-4 text-center text-sm font-mono text-slate-600 dark:text-slate-400">{player.winRate}</td>
+                           <td className="px-6 py-4 text-right font-black text-indigo-600 dark:text-indigo-400">{player.elo}</td>
+                        </tr>
+                      ))}
+                   </tbody>
+                </table>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Strategic Sidebar */}
-        <div className="lg:col-span-4 space-y-8">
-          <section className="bg-slate-950 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden border border-white/5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-10 flex items-center gap-3">
-              <Trophy className="text-yellow-400" />
-              NEURAL_LEGENDS
-            </h3>
-            <div className="space-y-6 relative z-10">
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="flex items-center justify-between group">
-                  <div className="flex items-center gap-4">
-                    <span className="text-[9px] font-black text-white/20 font-mono tracking-tighter">SEC_{i.toString().padStart(2, '0')}</span>
-                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                        <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=player${i}`} className="w-6 h-6 grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-tight group-hover:text-primary transition-colors">User_Agent_0{i}</p>
-                      <div className="flex items-center gap-2">
-                         <div className="w-1 h-1 bg-primary rounded-full animate-pulse" />
-                         <p className="text-[8px] font-bold text-white/30 font-mono tracking-widest">{2400 - i * 85}_SIG_XP</p>
-                      </div>
-                    </div>
-                  </div>
-                  {i === 1 && <Zap size={14} className="text-yellow-400 shadow-[0_0_10px_#facc15]" />}
+        {/* Right Sidebar */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-gradient-to-b from-slate-900 to-[#0F172A] rounded-[2rem] p-8 text-white border border-slate-800 shadow-2xl relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-6 opacity-10">
+                <Cpu size={100} />
+             </div>
+             <div className="relative z-10">
+                <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
+                  <Activity size={14} /> Season 4 Progress
+                </h3>
+                <div className="flex items-end justify-between mb-2">
+                   <span className="text-2xl font-black">Diamond III</span>
+                   <span className="text-sm font-bold text-slate-400">1452 / 1500 XP</span>
                 </div>
-              ))}
-            </div>
-            {/* Dark tactical decors */}
-            <div className="absolute bottom-[-10%] right-[-10%] w-48 h-48 bg-primary/10 rounded-full blur-[80px]" />
-            <Cpu size={200} className="absolute bottom-[-10%] left-[-20%] text-white/[0.03] -rotate-12" />
-          </section>
-
-          <section className="bg-white rounded-[3rem] border border-slate-200 p-10 shadow-xl shadow-slate-200/40 relative overflow-hidden">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-10 flex items-center gap-3">
-              <Activity className="text-indigo-600" />
-              Combat_Telemetry
-            </h3>
-            <div className="grid grid-cols-1 gap-6 relative z-10">
-              <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between group">
-                <div>
-                   <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Win_Probability</p>
-                   <p className="text-3xl font-black text-slate-900 tracking-tighter">74.2%</p>
+                <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden mb-6">
+                   <div className="h-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 w-[85%]" />
                 </div>
-                <TrendingUp size={24} className="text-green-500 group-hover:animate-bounce" />
-              </div>
-              <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between group">
-                <div>
-                   <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Kill_Streak</p>
-                   <p className="text-3xl font-black text-slate-900 tracking-tighter">06</p>
+                <div className="space-y-3">
+                   <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-medium">Global Rank</span>
+                      <span className="font-bold">#14,021</span>
+                   </div>
+                   <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-medium">Win Streak</span>
+                      <span className="font-bold text-yellow-400 flex items-center gap-1"><Flame size={14} /> 4</span>
+                   </div>
                 </div>
-                <Zap size={24} className="text-yellow-500 fill-yellow-500" />
-              </div>
-            </div>
-          </section>
+             </div>
+          </div>
         </div>
       </div>
 
       {/* Create Match Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="bg-indigo-600 p-8 text-white relative">
-              <h2 className="text-2xl font-black uppercase tracking-tighter">Forge a New Arena</h2>
-              <p className="text-indigo-100 text-sm opacity-80 font-medium">Configure your duel parameters</p>
-              <Swords className="absolute right-8 bottom-[-10px] w-24 h-24 text-white opacity-10" />
+          <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-indigo-600 to-fuchsia-600 p-8 text-white relative">
+              <h2 className="text-2xl font-black uppercase tracking-tighter">Initialize Arena</h2>
+              <p className="text-white/80 text-sm font-medium">Configure match parameters</p>
             </div>
             
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Select Challenge</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Challenge</label>
                 <select 
                   value={selectedProblemId}
                   onChange={(e) => setSelectedProblemId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/20 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:text-white"
                 >
                   {INITIAL_PROBLEMS.map(p => (
                     <option key={p.id} value={p.id}>{p.title} ({p.difficulty})</option>
@@ -327,53 +366,50 @@ export default function Battleground() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Time Limit (Min)</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Time Limit</label>
                   <input 
                     type="number" 
                     value={matchDuration}
                     onChange={(e) => setMatchDuration(parseInt(e.target.value))}
-                    min={5}
-                    max={60}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/20 transition-all"
+                    min={5} max={60}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Visibility</label>
-                  <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Visibility</label>
+                  <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <button 
                       onClick={() => setIsMatchPrivate(false)}
                       className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase transition-all",
-                        !isMatchPrivate ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                        "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all",
+                        !isMatchPrivate ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-slate-500 hover:text-slate-700"
                       )}
                     >
-                      <Unlock size={12} />
-                      Public
+                      <Unlock size={14} /> Public
                     </button>
                     <button 
                       onClick={() => setIsMatchPrivate(true)}
                       className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase transition-all",
-                        isMatchPrivate ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                        "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all",
+                        isMatchPrivate ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-slate-500 hover:text-slate-700"
                       )}
                     >
-                      <Lock size={12} />
-                      Private
+                      <Lock size={14} /> Private
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 pt-4">
+              <div className="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button 
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 py-4 text-slate-400 font-black uppercase tracking-widest text-xs hover:text-slate-800 transition-colors"
+                  className="flex-1 py-4 text-slate-500 font-bold uppercase tracking-wider text-xs hover:text-slate-800 transition-colors"
                 >
-                  Withdraw
+                  Cancel
                 </button>
                 <button 
                   onClick={handleCreateMatch}
-                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95"
+                  className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 shadow-xl shadow-indigo-500/20 transition-all active:scale-95"
                 >
                   Deploy Match
                 </button>
@@ -382,6 +418,64 @@ export default function Battleground() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MatchCard({ match, onJoin }: { match: BattleMatch, onJoin: (id: string) => void }) {
+  const problem = INITIAL_PROBLEMS.find(p => p.id === match.problemId);
+  const isWaiting = match.status === "waiting";
+
+  return (
+    <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-[0_0_20px_rgba(79,70,229,0.1)] transition-all group relative overflow-hidden flex items-center justify-between gap-6">
+       <div className="flex items-center gap-4 flex-1">
+          <div className="relative">
+             <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1">
+                <img src={match.creatorPhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${match.creatorId}`} className="w-full h-full rounded-lg object-cover" />
+             </div>
+             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-[#1E293B] rounded-full" />
+          </div>
+          <div>
+             <div className="flex items-center gap-2">
+                <h4 className="font-black text-slate-800 dark:text-white group-hover:text-indigo-500 transition-colors">{match.creatorName}</h4>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded">Rank S</span>
+             </div>
+             <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
+                <span>{problem?.title || "Unknown Problem"}</span>
+                <span className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
+                <span className={cn(
+                  "font-bold uppercase text-[10px] tracking-wider",
+                  problem?.difficulty === "Easy" ? "text-green-500" : problem?.difficulty === "Medium" ? "text-blue-500" : "text-red-500"
+                )}>
+                  {problem?.difficulty}
+                </span>
+             </p>
+          </div>
+       </div>
+
+       <div className="flex items-center gap-8">
+          <div className="hidden sm:flex items-center gap-2 text-slate-500 dark:text-slate-400">
+             <Timer size={16} />
+             <span className="text-xs font-bold font-mono">{match.durationMs / 60000}m</span>
+          </div>
+
+          <button
+            onClick={() => onJoin(match.id)}
+            disabled={!isWaiting}
+            className={cn(
+              "flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all",
+              isWaiting
+                ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 shadow-lg shadow-indigo-500/20"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+            )}
+          >
+            {isWaiting ? "Join Duel" : "Match Full"}
+            {isWaiting && <ChevronRight size={14} />}
+          </button>
+       </div>
+       
+       {/* Background hover accent */}
+       <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
     </div>
   );
 }

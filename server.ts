@@ -531,52 +531,61 @@ async function startServer() {
         <html>
         <head>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-            body { font-family: 'Inter', sans-serif; color: #111827; margin: 0; padding: 40px; background: #fff; }
-            .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #E5E7EB; padding-bottom: 20px; margin-bottom: 30px; }
-            .header-left h1 { color: #4F46E5; margin: 0; font-size: 32px; font-weight: 800; }
-            .header-left p { margin: 5px 0 0; color: #6B7280; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-            .header-right { text-align: right; color: #4B5563; font-size: 14px; line-height: 1.5; }
-            .section-title { font-size: 20px; font-weight: 800; color: #111827; margin-top: 40px; margin-bottom: 20px; border-bottom: 1px solid #E5E7EB; padding-bottom: 10px; }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+            body { font-family: 'Inter', sans-serif; color: #E2E8F0; margin: 0; padding: 40px; background: #020617; }
+            .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1E293B; padding-bottom: 20px; margin-bottom: 30px; position: relative; }
+            .header::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 30%; height: 2px; background: linear-gradient(90deg, #4F46E5, #D946EF); box-shadow: 0 0 15px rgba(217, 70, 239, 0.5); }
+            .header-left h1 { color: #fff; margin: 0; font-size: 36px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; }
+            .header-left h1 span { color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(90deg, #4F46E5, #D946EF); }
+            .header-left p { margin: 5px 0 0; color: #94A3B8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; font-family: 'JetBrains Mono', monospace; }
+            .header-right { text-align: right; color: #94A3B8; font-size: 12px; line-height: 1.6; font-family: 'JetBrains Mono', monospace; }
+            .header-right strong { color: #fff; font-size: 14px; }
+            .section-title { font-size: 18px; font-weight: 800; color: #fff; margin-top: 40px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #1E293B; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+            .section-title::before { content: ''; display: inline-block; width: 12px; height: 12px; background: #4F46E5; box-shadow: 0 0 10px #4F46E5; border-radius: 2px; }
             .grid-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
-            .card { background: #F9FAFB; border: 1px solid #E5E7EB; padding: 20px; border-radius: 12px; text-align: center; }
-            .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6B7280; margin-bottom: 8px; font-weight: 600; }
-            .card .value { font-size: 28px; font-weight: 800; color: #4F46E5; margin: 0; }
+            .card { background: #0F172A; border: 1px solid #1E293B; padding: 25px 20px; border-radius: 16px; text-align: center; position: relative; overflow: hidden; }
+            .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, #4F46E5, transparent); opacity: 0.5; }
+            .card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #64748B; margin-bottom: 12px; font-weight: 800; }
+            .card .value { font-size: 32px; font-weight: 800; color: #fff; margin: 0; font-family: 'JetBrains Mono', monospace; }
+            .card .value.neon-text { color: #D946EF; text-shadow: 0 0 15px rgba(217, 70, 239, 0.4); }
             .charts-wrapper { display: flex; gap: 30px; margin-bottom: 40px; }
-            .chart-box { flex: 1; padding: 20px; background: #F9FAFB; border-radius: 12px; border: 1px solid #E5E7EB; text-align: center; }
-            .chart-box h3 { margin: 0 0 15px; font-size: 14px; color: #374151; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+            .chart-box { flex: 1; padding: 25px; background: #0F172A; border-radius: 16px; border: 1px solid #1E293B; text-align: center; }
+            .chart-box h3 { margin: 0 0 20px; font-size: 12px; color: #94A3B8; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
             .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; margin-bottom: 40px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #E5E7EB; }
-            th { background: #F3F4F6; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-            tr:nth-child(even) { background: #F9FAFB; }
-            .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-            .badge-success { background: #D1FAE5; color: #065F46; }
-            .badge-error { background: #FEE2E2; color: #991B1B; }
-            .weak-areas { background: #FEF2F2; border: 1px solid #FCA5A5; padding: 20px; border-radius: 12px; margin-bottom: 40px; }
-            .weak-areas h3 { color: #991B1B; margin: 0 0 10px; font-size: 16px; }
-            .weak-areas p { color: #7F1D1D; margin: 0; font-size: 14px; }
-            .footer { margin-top: 60px; text-align: center; font-size: 11px; color: #9CA3AF; border-top: 1px solid #E5E7EB; padding-top: 20px; }
+            table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; font-size: 12px; margin-bottom: 40px; }
+            th, td { padding: 16px 20px; text-align: left; }
+            th { background: transparent; font-weight: 800; color: #64748B; text-transform: uppercase; font-size: 10px; letter-spacing: 2px; border-bottom: 1px solid #1E293B; }
+            tr td { background: #0F172A; border-top: 1px solid #1E293B; border-bottom: 1px solid #1E293B; }
+            tr td:first-child { border-left: 1px solid #1E293B; border-top-left-radius: 12px; border-bottom-left-radius: 12px; color: #fff; font-weight: 600; }
+            tr td:last-child { border-right: 1px solid #1E293B; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+            .badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .badge-success { background: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
+            .badge-error { background: rgba(239, 68, 68, 0.1); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+            .weak-areas { background: rgba(217, 70, 239, 0.05); border: 1px solid rgba(217, 70, 239, 0.2); padding: 25px; border-radius: 16px; margin-bottom: 40px; position: relative; }
+            .weak-areas::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #D946EF; border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+            .weak-areas h3 { color: #D946EF; margin: 0 0 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .weak-areas p { color: #CBD5E1; margin: 0; font-size: 13px; line-height: 1.6; }
+            .footer { margin-top: 60px; text-align: center; font-size: 10px; color: #475569; border-top: 1px solid #1E293B; padding-top: 25px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
           </style>
           <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         </head>
         <body>
           <div class="header">
             <div class="header-left">
-              <h1>CodeMentorAI</h1>
-              <p>Performance Analytics Report</p>
+              <h1>Code<span>MentorAI</span></h1>
+              <p>Performance Analytics Telemetry</p>
             </div>
             <div class="header-right">
               <strong>${userData?.displayName || "Developer"}</strong><br>
               ${userData?.email || "No Email"}<br>
-              Generated: ${new Date().toLocaleDateString()}
+              SYNC_DATE: ${new Date().toLocaleDateString()}
             </div>
           </div>
 
           <div class="grid-cards">
             <div class="card">
               <div class="label">Total Solved</div>
-              <div class="value">${progress?.solvedProblems?.length || 0}</div>
+              <div class="value neon-text">${progress?.solvedProblems?.length || 0}</div>
             </div>
             <div class="card">
               <div class="label">Accuracy</div>
@@ -611,40 +620,41 @@ async function startServer() {
           <div class="section-title">Topic-wise Performance</div>
           <table>
             <tr><th>Topic</th><th>Problems Mastered</th></tr>
-            ${sortedTopics.map(([t, c]) => `<tr><td><span style="font-weight: 600; text-transform: capitalize; color: #4F46E5;">${t}</span></td><td>${c}</td></tr>`).join('')}
-            ${sortedTopics.length === 0 ? '<tr><td colspan="2">No topic data available</td></tr>' : ''}
+            ${sortedTopics.map(([t, c]) => `<tr><td><span style="font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #D946EF;">${t}</span></td><td style="font-family: 'JetBrains Mono', monospace; color: #fff;">${c}</td></tr>`).join('')}
+            ${sortedTopics.length === 0 ? '<tr><td colspan="2" style="text-align: center; color: #64748B;">No topic data available</td></tr>' : ''}
           </table>
 
           ${sortedTopics.length > 0 ? `
             <div class="weak-areas">
-              <h3>Recommendations for Improvement</h3>
-              <p>Based on your analytics, you should focus more on practicing <strong>${sortedTopics[sortedTopics.length - 1][0]}</strong> and <strong>${sortedTopics.length > 1 ? sortedTopics[sortedTopics.length - 2][0] : 'related topics'}</strong> to balance your mastery distribution.</p>
+              <h3>AI Insights & Recommendations</h3>
+              <p>Based on your analytics telemetry, you should focus more on practicing <strong style="color: #fff;">${sortedTopics[sortedTopics.length - 1][0]}</strong> and <strong style="color: #fff;">${sortedTopics.length > 1 ? sortedTopics[sortedTopics.length - 2][0] : 'related topics'}</strong> to balance your mastery distribution across the neural network.</p>
             </div>
           ` : ''}
 
           <div style="page-break-before: always;"></div>
-          <div class="section-title">Recent Submissions</div>
+          <div class="section-title">Recent Submissions Log</div>
           <table>
-            <tr><th>Problem ID</th><th>Language</th><th>Status</th><th>AI Hint Score</th><th>Date</th></tr>
+            <tr><th>Node ID</th><th>Language</th><th>Status</th><th>AI Hint Score</th><th>Timestamp</th></tr>
             ${submissions.map((s: any) => `
               <tr>
-                <td style="font-family: monospace;">${(s.problemId || "N/A").substring(0, 12)}</td>
-                <td style="text-transform: capitalize;">${s.language || "N/A"}</td>
+                <td style="font-family: 'JetBrains Mono', monospace;">${(s.problemId || "N/A").substring(0, 12)}</td>
+                <td style="text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #94A3B8;">${s.language || "N/A"}</td>
                 <td><span class="badge ${s.status === 'accepted' ? 'badge-success' : 'badge-error'}">${(s.status || "N/A").replace('_', ' ').toUpperCase()}</span></td>
-                <td>${s.aiDependencyScore !== undefined ? s.aiDependencyScore + '%' : 'N/A'}</td>
-                <td>${new Date(s.timestamp || Date.now()).toLocaleDateString()}</td>
+                <td style="font-family: 'JetBrains Mono', monospace;">${s.aiDependencyScore !== undefined ? s.aiDependencyScore + '%' : 'N/A'}</td>
+                <td style="font-family: 'JetBrains Mono', monospace; color: #94A3B8;">${new Date(s.timestamp || Date.now()).toLocaleDateString()}</td>
               </tr>
             `).join('')}
-            ${submissions.length === 0 ? '<tr><td colspan="5">No recent submissions</td></tr>' : ''}
+            ${submissions.length === 0 ? '<tr><td colspan="5" style="text-align: center; color: #64748B;">No recent submissions</td></tr>' : ''}
           </table>
 
           <div class="footer">
-            Generated by CodeMentorAI Engine &copy; ${new Date().getFullYear()} | This document contains automated behavioral analytics.
+            Generated by CodeMentorAI Core Engine &copy; ${new Date().getFullYear()} // Classified Behavioral Analytics
           </div>
 
           <script>
-            // Ensure Chart.js renders immediately without animations so Puppeteer captures it perfectly
             Chart.defaults.animation = false;
+            Chart.defaults.color = '#94A3B8';
+            Chart.defaults.font.family = "'Inter', sans-serif";
             
             new Chart(document.getElementById('aiChart'), {
               type: 'doughnut',
@@ -652,11 +662,13 @@ async function startServer() {
                 labels: ['Original Thinking', 'AI Dependent'],
                 datasets: [{
                   data: [${authScore}, ${aiDependencyScore}],
-                  backgroundColor: ['#4F46E5', '#EF4444'],
-                  borderWidth: 0
+                  backgroundColor: ['#4F46E5', '#D946EF'],
+                  borderWidth: 2,
+                  borderColor: '#0F172A',
+                  hoverOffset: 4
                 }]
               },
-              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' } } }, cutout: '75%' }
             });
 
             new Chart(document.getElementById('topicChart'), {
@@ -667,14 +679,19 @@ async function startServer() {
                   label: 'Problems Solved',
                   data: ${JSON.stringify(topicData)},
                   backgroundColor: '#4F46E5',
-                  borderRadius: 4
+                  borderRadius: 6,
+                  borderWidth: 0,
+                  barThickness: 24
                 }]
               },
               options: { 
                 responsive: true, 
                 maintainAspectRatio: false, 
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                scales: { 
+                  y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#1E293B' }, border: { display: false } },
+                  x: { grid: { display: false }, border: { display: false } }
+                }
               }
             });
           </script>
