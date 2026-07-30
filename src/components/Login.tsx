@@ -139,26 +139,6 @@ export default function Login() {
             </div>
           </motion.div>
 
-          {/* Floating Code Snippet */}
-          <motion.div
-            initial={{ opacity: 0, y: 50, rotate: -5 }}
-            animate={{ opacity: 1, y: 0, rotate: -2 }}
-            transition={{ duration: 1, delay: 0.8, type: "spring" }}
-            whileHover={{ rotate: 0, scale: 1.02 }}
-            className="absolute -right-16 bottom-24 w-80 bg-[#0B1020]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl z-20"
-          >
-            <div className="flex gap-2 mb-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-            </div>
-            <pre className="text-xs font-mono leading-loose text-gray-300">
-              <span className="text-[#7C3AED]">async function</span> <span className="text-[#06B6D4]">solveProblem</span>() {'{\n'}
-              {'  '}const ai = <span className="text-[#7C3AED]">await</span> Mentor.connect();{'\n'}
-              {'  '}return ai.guide(userProgress);{'\n'}
-              {'}'}
-            </pre>
-          </motion.div>
         </div>
       </div>
 
